@@ -5,6 +5,7 @@ import {
   DashboardOutlined, UserOutlined, ThunderboltOutlined,
   NodeIndexOutlined, FolderOpenOutlined, MessageOutlined,
   BarChartOutlined, LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
 import './MainLayout.css'
 
@@ -22,7 +23,8 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const isAdmin = user?.role === 'admin'
 
   const handleLogout = () => {
     logout()
@@ -50,6 +52,16 @@ export default function MainLayout() {
               {!collapsed && <span className="sidebar-label">{item.label}</span>}
             </button>
           ))}
+          {isAdmin && (
+            <button
+              className={`sidebar-item admin-nav-item${location.pathname === '/admin' ? ' active' : ''}`}
+              onClick={() => navigate('/admin')}
+              title={collapsed ? '管理后台' : undefined}
+            >
+              <span className="sidebar-icon"><SettingOutlined /></span>
+              {!collapsed && <span className="sidebar-label">管理后台</span>}
+            </button>
+          )}
         </nav>
 
         <div className="sidebar-footer">

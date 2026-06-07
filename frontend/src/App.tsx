@@ -10,6 +10,7 @@ import LearningPath from './pages/LearningPath'
 import Resources from './pages/Resources'
 import Tutor from './pages/Tutor'
 import Report from './pages/Report'
+import Admin from './pages/Admin'
 import './App.css'
 
 const theme = {
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="/resources" element={<Resources />} />
         <Route path="/tutor" element={<Tutor />} />
         <Route path="/report" element={<Report />} />
+        <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

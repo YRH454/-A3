@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.profile import router as profile_router
 from app.api.auth import router as auth_router
+from app.api.admin import router as admin_router
 
 app = FastAPI(
     title="个性化学习智能体系统",
@@ -19,6 +20,7 @@ app.add_middleware(
 
 app.include_router(profile_router)
 app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 @app.get("/")

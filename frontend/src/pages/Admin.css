@@ -1,0 +1,15 @@
+.admin-page { padding: 24px 32px; height: 100%; overflow-y: auto; }
+
+.admin-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: #1E1510;
+  margin: 0 0 20px;
+}
+
+.admin-page .ant-card {
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px rgba(30,21,16,0.03);
+}

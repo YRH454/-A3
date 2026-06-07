@@ -145,8 +145,14 @@
 .collapse-btn { opacity: 0.4; }
 .collapse-btn:hover { opacity: 0.7; }
 
-.logout-btn:hover {
-  color: #FCA5A5 !important;
+.logout-btn:hover { color: #FCA5A5 !important; }
+
+/* Admin nav separator */
+.admin-nav-item {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 14px;
+  border-radius: 0;
 }
 
 /* ---- Main Content Area ---- */
