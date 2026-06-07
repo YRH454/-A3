@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useChatStore, DIM_LABELS } from '../stores/chatStore'
 
 const DIM_ORDER = [

@@ -1,8 +1,15 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { useAuthStore } from './stores/authStore'
 import AuthPage from './components/AuthPage'
-import ChatPanel from './components/ChatPanel'
-import ProfilePanel from './components/ProfilePanel'
+import MainLayout from './layouts/MainLayout'
+import Dashboard from './pages/Dashboard'
+import ProfilePage from './pages/ProfilePage'
+import Generate from './pages/Generate'
+import LearningPath from './pages/LearningPath'
+import Resources from './pages/Resources'
+import Tutor from './pages/Tutor'
+import Report from './pages/Report'
 import './App.css'
 
 const theme = {
@@ -15,42 +22,39 @@ const theme = {
   },
 }
 
-function App() {
-  const { isLoggedIn, user, logout } = useAuthStore()
+function AppRoutes() {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn)
 
-  if (!isLoggedIn || !user) {
+  if (!isLoggedIn) {
     return (
-      <ConfigProvider theme={theme}>
-        <AuthPage onEnter={() => {}} />
-      </ConfigProvider>
+      <Routes>
+        <Route path="*" element={<AuthPage onEnter={() => {}} />} />
+      </Routes>
     )
   }
 
   return (
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/generate" element={<Generate />} />
+        <Route path="/path" element={<LearningPath />} />
+        <Route path="/resources" element={<Resources />} />
+        <Route path="/tutor" element={<Tutor />} />
+        <Route path="/report" element={<Report />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function App() {
+  return (
     <ConfigProvider theme={theme}>
-      <div className="app-shell">
-        <header className="app-header">
-          <h1 className="app-title">学境</h1>
-          <span className="app-subtitle">个性化学习智能体</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: '#C4B8AA' }}>
-              {user.username} ({user.role === 'guest' ? '游客' : user.role === 'admin' ? '管理员' : '用户'})
-            </span>
-            <button
-              onClick={logout}
-              style={{
-                background: 'transparent', border: '1px solid #5A5048',
-                color: '#B8A898', padding: '4px 12px', borderRadius: 6,
-                cursor: 'pointer', fontSize: 12,
-              }}
-            >退出</button>
-          </div>
-        </header>
-        <main className="app-main">
-          <ChatPanel />
-          <ProfilePanel />
-        </main>
-      </div>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </ConfigProvider>
   )
 }

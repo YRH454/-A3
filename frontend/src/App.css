@@ -1,47 +1,4 @@
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: linear-gradient(135deg, #F9F6F0 0%, #F2EDE4 50%, #F7F3EC 100%);
-}
-
-/* ---- Header ---- */
-.app-header {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding: 16px 28px;
-  background: var(--bg-dark);
-  color: #FFFAF5;
-  flex-shrink: 0;
-  z-index: 10;
-  box-shadow: 0 2px 16px rgba(58,50,44,0.15);
-}
-
-.app-title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--accent-gold);
-  margin: 0;
-}
-
-.app-subtitle {
-  font-size: 13px;
-  color: #C4B8AA;
-  font-weight: 300;
-}
-
-/* ---- Main Layout ---- */
-.app-main {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  gap: 0;
-}
-
-/* ---- Chat Panel ---- */
+/* ---- Chat Panel (used in ProfilePage) ---- */
 .chat-panel {
   flex: 1;
   display: flex;

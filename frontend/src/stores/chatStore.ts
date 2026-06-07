@@ -9,6 +9,12 @@ interface DimInfo { key: string; label: string }
 
 interface VisualData {
   radar_scores?: Record<string, number>
+  card_title?: string
+  atmosphere?: string
+  color_gradient?: string[]
+  strengths?: string[]
+  growth_areas?: string[]
+  learning_quote?: string
   primary_color?: string
   summary_tag?: string
 }

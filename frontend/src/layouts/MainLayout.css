@@ -1,0 +1,142 @@
+.platform-shell {
+  display: flex;
+  height: 100vh;
+  background: #F9F6F0;
+  overflow: hidden;
+}
+
+/* ---- Sidebar ---- */
+.platform-sidebar {
+  width: 230px;
+  background: linear-gradient(180deg, #3C342E 0%, #2C2520 100%);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  box-shadow: 2px 0 24px rgba(0,0,0,0.15);
+  z-index: 20;
+}
+
+.platform-sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 18px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sidebar-logo {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #D4845A, #C0603A);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(212,132,90,0.3);
+}
+
+.sidebar-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px; font-weight: 600; color: #FFFAF5;
+  letter-spacing: 1px;
+}
+
+/* Nav items */
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #B8A898;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: #E5DDD0;
+}
+
+.sidebar-item.active {
+  background: rgba(212,132,90,0.15);
+  color: #D4845A;
+  font-weight: 600;
+}
+
+.sidebar-item.active .sidebar-icon {
+  color: #D4845A;
+}
+
+.sidebar-icon {
+  font-size: 18px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-label {
+  white-space: nowrap;
+}
+
+.platform-sidebar.collapsed .sidebar-label {
+  display: none;
+}
+
+.platform-sidebar.collapsed .sidebar-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.platform-sidebar.collapsed .sidebar-nav {
+  padding: 12px 4px;
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+  padding: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.collapse-btn {
+  opacity: 0.5;
+}
+
+.logout-btn:hover {
+  color: #E8886A !important;
+}
+
+/* ---- Main Content Area ---- */
+.platform-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Right Panel (not fixed, each page controls its own) ---- */
