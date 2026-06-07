@@ -27,5 +27,10 @@ Thumbs.db
 # Screenshots (keep only if needed)
 page_screenshot.png
 
+# Secrets (never commit!)
+API配置.md
+.env
+*.env
+
 # Claude
 .claude/
