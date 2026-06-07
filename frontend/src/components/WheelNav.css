@@ -1,138 +1,96 @@
-.wheel-container {
+.wheel-wrapper {
   position: relative;
-  width: 460px; height: 460px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Outer ambient glow */
-.wheel-glow {
+.wheel-container {
+  position: relative;
+  width: 440px; height: 440px;
+}
+
+/* Background ring */
+.wheel-bg-ring {
   position: absolute;
   width: 440px; height: 440px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(217,119,6,0.04) 0%, transparent 60%),
-    radial-gradient(circle at 30% 70%, rgba(58,38,24,0.03) 0%, transparent 50%);
-  animation: glowPulse 4s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.06); opacity: 1; }
-}
-
-/* Decorative rings - subtle */
-.wheel-rings {
-  position: absolute;
-  width: 460px; height: 460px;
   pointer-events: none;
 }
 
-/* Main wheel with shadow lift */
+/* Main wheel */
 .wheel {
   position: relative;
   width: 440px; height: 440px;
   cursor: grab;
   transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
-  filter: drop-shadow(0 8px 32px rgba(30,21,16,0.12));
+  filter: drop-shadow(0 4px 24px rgba(30,21,16,0.1));
 }
 
 .wheel:hover {
-  filter: drop-shadow(0 12px 40px rgba(30,21,16,0.16));
+  filter: drop-shadow(0 6px 32px rgba(30,21,16,0.14));
 }
 
 .wheel.dragging {
   transition: none;
   cursor: grabbing;
-  filter: drop-shadow(0 16px 48px rgba(30,21,16,0.18));
+  filter: drop-shadow(0 8px 40px rgba(30,21,16,0.18));
 }
 
 .wheel:active { cursor: grabbing; }
-
 .wheel-svg { width: 100%; height: 100%; }
 
-/* Sector base */
+/* Sector */
 .wheel-sector {
-  transition: all 0.25s ease;
-  opacity: 0.88;
+  transition: all 0.2s ease;
+  opacity: 0.9;
 }
 
-/* Sector hover & selected */
-.wheel-sector:hover {
-  opacity: 1;
-  filter: brightness(1.08) saturate(1.15);
-}
+.wheel-sector:hover { opacity: 1; }
 
 .wheel-sector.selected {
   opacity: 1;
-  filter: brightness(1.12) saturate(1.25);
-  stroke: rgba(217,119,6,0.5);
-  stroke-width: 2;
+  stroke: rgba(217,119,6,0.45);
+  stroke-width: 1.8;
 }
 
-.wheel-icon {
+.wheel-icon, .wheel-label {
   pointer-events: none;
   user-select: none;
-  transition: transform 0.2s ease;
 }
 
-.wheel-sector:hover + .wheel-icon,
-g:has(.wheel-sector:hover) .wheel-icon {
-  transform: scale(1.08);
-}
-
-/* Selection indicator - minimal, only shown on hover */
-.wheel-indicator {
+/* Arrow indicator at top */
+.wheel-arrow {
   position: absolute;
-  top: -38px;
-  left: 50%;
+  top: -6px; left: 50%;
   transform: translateX(-50%);
-  text-align: center;
-  z-index: 10;
-  opacity: 0.85;
-  transition: opacity 0.3s ease;
-}
-
-.indicator-arrow {
   font-size: 14px;
   color: #D97706;
-  animation: arrowBounce 2s ease-in-out infinite;
+  z-index: 10;
+  filter: drop-shadow(0 1px 2px rgba(217,119,6,0.3));
+  animation: arrowPulse 2s ease-in-out infinite;
 }
 
-@keyframes arrowBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
-}
-
-.indicator-label {
-  margin-top: 3px;
-  padding: 4px 12px;
-  border-radius: 10px;
-  background: rgba(217,119,6,0.08);
-  border: 1px solid rgba(217,119,6,0.12);
-  font-size: 11px;
-  color: #7A5A30;
-  font-weight: 500;
-  white-space: nowrap;
-  backdrop-filter: blur(8px);
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; transform: translateX(-50%) translateY(3px); }
 }
 
 /* Hover tooltip */
 .wheel-tooltip {
   position: absolute;
-  bottom: 8px;
-  left: 50%;
+  bottom: 6px; left: 50%;
   transform: translateX(-50%);
-  text-align: center;
-  padding: 6px 16px;
-  border-radius: 10px;
-  background: rgba(30,21,16,0.85);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(30,21,16,0.88);
   backdrop-filter: blur(12px);
   z-index: 20;
   animation: tooltipIn 0.2s ease-out;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 @keyframes tooltipIn {
@@ -140,34 +98,21 @@ g:has(.wheel-sector:hover) .wheel-icon {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+.tooltip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .tooltip-name {
-  font-size: 13px; font-weight: 600; color: #F59E0B;
+  font-size: 12px; font-weight: 600; color: #F59E0B;
+}
+
+.tooltip-sep {
+  color: rgba(255,255,255,0.25);
+  font-size: 10px;
 }
 
 .tooltip-sub {
-  font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px;
-}
-
-/* Floating particles - refined */
-.wheel-particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.particle {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 3px; height: 3px;
-  border-radius: 50%;
-  opacity: 0;
-  animation: particleFloat 5s ease-in-out infinite;
-  animation-delay: var(--delay);
-}
-
-@keyframes particleFloat {
-  0%, 100% { opacity: 0; transform: rotate(var(--angle)) translateY(calc(var(--dist) * -1)) scale(0.3); }
-  25% { opacity: 0.7; }
-  50% { opacity: 0.3; transform: rotate(var(--angle)) translateY(calc(var(--dist) * -1.25)) scale(1); }
-  75% { opacity: 0.1; }
+  font-size: 11px; color: rgba(255,255,255,0.5);
 }
