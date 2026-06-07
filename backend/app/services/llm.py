@@ -36,9 +36,12 @@ def chat_qwen_stream(messages: list, temperature=0.7, max_tokens=2048):
     )
 
 
-def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096):
-    """调用 DeepSeek（复杂推理）"""
-    return deepseek.chat.completions.create(
+def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=False):
+    """调用 DeepSeek"""
+    kwargs = dict(
         model=DEEPSEEK_MODEL, messages=messages,
         temperature=temperature, max_tokens=max_tokens,
     )
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+    return deepseek.chat.completions.create(**kwargs)

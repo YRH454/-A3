@@ -4,13 +4,33 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.agents.profile_agent import (
-    ask_question, extract_current_answer, generate_profile, count_filled, PROFILE_DIMENSIONS,
+    ask_question, extract_current_answer, generate_profile,
+    count_filled, get_first_question, PROFILE_DIMENSIONS,
 )
 from app.services.profile_db import (
     get_profile, save_profile, get_chat_session, save_chat_session,
 )
 
 router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
+
+
+@router.post("/start")
+def start_profile(user_id: int):
+    """AI主动发起对话，返回第一个问题"""
+    import concurrent.futures
+    sess = get_chat_session(user_id)
+    if sess and sess.get("messages"):
+        # 已有对话记录，返回最后一条 AI 消息
+        for m in reversed(sess["messages"]):
+            if m["role"] == "assistant":
+                return {"reply": m["content"], "done": False}
+        return {"reply": "欢迎回来！我们继续吧。", "done": False}
+
+    # 全新会话，AI先开口
+    question = get_first_question()
+    messages = [{"role": "assistant", "content": question}]
+    save_chat_session(user_id, messages)
+    return {"reply": question, "done": False}
 
 
 class ChatRequest(BaseModel):

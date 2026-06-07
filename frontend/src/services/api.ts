@@ -1,5 +1,11 @@
 const BASE = 'http://localhost:8000/api/v1'
 
+export async function startProfile(userId: number) {
+  const res = await fetch(`${BASE}/profile/start?user_id=${userId}`, { method: 'POST' })
+  if (!res.ok) throw new Error(`Start error: ${res.status}`)
+  return res.json()
+}
+
 export async function sendMessage(userId: number, message: string) {
   const res = await fetch(`${BASE}/profile/chat`, {
     method: 'POST',

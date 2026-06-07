@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
-import { streamChat } from '../services/api'
+import { streamChat, startProfile } from '../services/api'
 
-const USER_ID = 1 // TODO: replace with real auth
+const USER_ID = 1
 
 export default function ChatPanel() {
   const { messages, isLoading, addMessage, setProfile, setStage, setLoading } = useChatStore()
   const [input, setInput] = useState('')
+  const [hasStarted, setHasStarted] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<(() => void) | null>(null)
@@ -16,6 +17,21 @@ export default function ChatPanel() {
   }, [])
 
   useEffect(() => { scrollToBottom() }, [messages, scrollToBottom])
+
+  // Auto-init: AI starts the conversation
+  useEffect(() => {
+    if (hasStarted) return
+    setHasStarted(true)
+    setLoading(true)
+    startProfile(USER_ID)
+      .then((data) => {
+        addMessage({ role: 'assistant', content: data.reply })
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
+  }, [hasStarted, addMessage, setLoading])
 
   const handleSend = () => {
     const text = input.trim()

@@ -1,7 +1,6 @@
 """学生画像智能体 — AI主动提问，一问一答，对话结束后自动生成画像"""
-
 import json
-from app.services.llm import chat_qwen
+from app.services.llm import chat_deepseek, chat_qwen
 
 PROFILE_DIMENSIONS = {
     "knowledge_base": "知识基础：学过哪些课程、掌握哪些技能、当前水平",
@@ -120,6 +119,19 @@ def count_filled(profile: dict) -> int:
     return sum(1 for v in profile.values() if v and v.strip())
 
 
+def get_first_question() -> str:
+    """开局：AI主动打招呼并问第一个问题"""
+    resp = chat_deepseek([{
+        "role": "system",
+        "content": """你是一个友善的学习顾问。学生刚刚进入系统，你需要：
+1. 简短打招呼（1句话）
+2. 自然地开始了解学生的学习情况，问第一个问题
+问题可以从这些角度选一个：专业/年级背景、学习目标、当前的课程、为什么想学习。
+总长度控制在2-3句话，语气温暖自然。""",
+    }], temperature=0.8, max_tokens=200)
+    return resp.choices[0].message.content.strip()
+
+
 def ask_question(conversation: list, profile: dict) -> dict:
     """AI根据当前画像状态，选择下一个维度并生成一个问题"""
     conv_text = "\n".join(
@@ -128,7 +140,7 @@ def ask_question(conversation: list, profile: dict) -> dict:
     )
     dims_status = get_dimensions_status(profile)
 
-    resp = chat_qwen([{
+    resp = chat_deepseek([{
         "role": "system",
         "content": ASK_PROMPT.format(
             dimensions_status=dims_status,
@@ -151,27 +163,40 @@ def extract_current_answer(conversation: list, profile: dict) -> dict:
         f"{'学生' if m['role'] == 'user' else '顾问'}：{m['content']}"
         for m in conversation[-8:]
     )
+    existing_str = json.dumps(profile, ensure_ascii=False) if profile else "尚未提取"
 
-    resp = chat_qwen([{
+    resp = chat_deepseek([{
         "role": "system",
-        "content": f"""从最新对话中提取学生画像信息。只提取本轮对话中明确提到的维度。
+        "content": f"""分析以下最新对话，提取学生信息到学习画像。
 
-已抽取的画像：{json.dumps(profile, ensure_ascii=False)}
+已知画像：{existing_str}
 
-请返回JSON（不要markdown标记）：
-{{{", ".join(f'"{k}": "一句话描述或空字符串"' for k in PROFILE_DIMENSIONS)}}}
+维度说明：
+- knowledge_base: 知识基础（学过什么、掌握水平）
+- learning_style: 学习风格（视频/文档/动手/听觉）
+- weak_points: 学习难点
+- interests: 兴趣方向
+- goals: 学习目标
+- learning_pace: 学习节奏和时间投入
+- interaction_pref: 交互偏好
 
-只返回本轮新获取的信息，没有涉及的维度返回空字符串。"""
+请输出JSON，只包含从本段对话中新获取到的维度（不要输出未提到的维度）：""",
+    }, {
+        "role": "user",
+        "content": conv_text,
     }], temperature=0.3, max_tokens=512, json_mode=True)
 
     try:
-        new_data = json.loads(resp.choices[0].message.content)
+        raw = resp.choices[0].message.content.strip()
+        new_data = json.loads(raw)
+        if not isinstance(new_data, dict):
+            return profile
         merged = {**profile}
         for k, v in new_data.items():
-            if v and v.strip() and k in PROFILE_DIMENSIONS:
-                merged[k] = v.strip()
+            if v and str(v).strip() and k in PROFILE_DIMENSIONS:
+                merged[k] = str(v).strip()
         return merged
-    except (json.JSONDecodeError, Exception):
+    except Exception:
         return profile
 
 
