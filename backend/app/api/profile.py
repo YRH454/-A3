@@ -1,11 +1,12 @@
-"""学生画像 API — 一问一答式对话，AI 主动提问"""
+"""学生画像 API — 逐维度提问，实时画像更新"""
 import json
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.agents.profile_agent import (
-    ask_question, extract_current_answer, generate_profile,
-    count_filled, get_first_question, PROFILE_DIMENSIONS,
+    DIMENSIONS_ORDER, PROFILE_DIMENSIONS,
+    get_next_dimension, ask_dimension_question,
+    extract_dimension_answer, generate_final_profile,
 )
 from app.services.profile_db import (
     get_profile, save_profile, get_chat_session, save_chat_session,
@@ -16,21 +17,44 @@ router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
 
 @router.post("/start")
 def start_profile(user_id: int):
-    """AI主动发起对话，返回第一个问题"""
-    import concurrent.futures
+    """AI 主动问第一个维度的问题"""
     sess = get_chat_session(user_id)
     if sess and sess.get("messages"):
-        # 已有对话记录，返回最后一条 AI 消息
-        for m in reversed(sess["messages"]):
-            if m["role"] == "assistant":
-                return {"reply": m["content"], "done": False}
-        return {"reply": "欢迎回来！我们继续吧。", "done": False}
+        # 已有对话，返回当前进度
+        profile = sess.get("profile", {})
+        filled = {k for k, v in profile.items() if v and v.strip()}
+        dim = get_next_dimension(filled)
+        if dim:
+            question = ask_dimension_question(
+                dim["key"], dim["label"], dim["desc"],
+                sess["messages"], profile
+            )
+            return {
+                "reply": question,
+                "current_dim": {"key": dim["key"], "label": dim["label"]},
+                "profile": profile,
+                "filled": len(filled),
+                "total": len(DIMENSIONS_ORDER),
+                "done": False,
+            }
+        return {"reply": "你的学习画像已经构建完成！", "done": True}
 
-    # 全新会话，AI先开口
-    question = get_first_question()
+    # 全新会话：问第一个维度
+    dim = DIMENSIONS_ORDER[0]
+    key, label, desc = dim
+    question = ask_dimension_question(key, label, desc, [], {})
+
     messages = [{"role": "assistant", "content": question}]
     save_chat_session(user_id, messages)
-    return {"reply": question, "done": False}
+
+    return {
+        "reply": question,
+        "current_dim": {"key": key, "label": label},
+        "profile": {},
+        "filled": 0,
+        "total": len(DIMENSIONS_ORDER),
+        "done": False,
+    }
 
 
 class ChatRequest(BaseModel):
@@ -39,25 +63,55 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/chat")
-async def profile_chat(req: ChatRequest):
-    """一问一答：AI 主动提问，用户回答，对话结束后自动生成画像"""
+def profile_chat(req: ChatRequest):
+    """处理用户回答，提取特征，问下一个维度"""
     sess = get_chat_session(req.user_id)
     messages = sess["messages"] if sess else []
     profile = sess.get("profile", {}) if sess else {}
 
+    # 确定当前在问哪个维度
+    filled = {k for k, v in profile.items() if v and v.strip()}
+    dim = get_next_dimension(filled)
+
+    if dim is None:
+        # 所有维度已覆盖，生成最终画像
+        full = generate_final_profile(profile, messages)
+        profile = full["profile"]
+        report = full["report"]
+
+        messages.append({"role": "user", "content": req.message})
+        messages.append({"role": "assistant", "content": report})
+        save_chat_session(req.user_id, messages)
+        save_profile(req.user_id, profile)
+
+        return {
+            "reply": report,
+            "profile": profile,
+            "visual": full.get("visual"),
+            "current_dim": None,
+            "filled": len(filled),
+            "total": len(DIMENSIONS_ORDER),
+            "done": True,
+        }
+
     # 添加用户消息
     messages.append({"role": "user", "content": req.message})
 
-    # 增量提取当前回答中的画像信息
-    profile = extract_current_answer(messages, profile)
-    filled_count = count_filled(profile)
+    # 提取当前维度的特征
+    extracted = extract_dimension_answer(
+        dim["key"], dim["label"], messages, req.message
+    )
 
-    # AI 判断：继续提问 or 生成画像
-    result = ask_question(messages, profile)
+    if extracted:
+        profile[dim["key"]] = extracted
+        filled.add(dim["key"])
 
-    if result["ready"] or filled_count >= 5:
-        # 信息够了，生成完整画像
-        full = generate_profile(messages)
+    # 问下一个维度
+    next_dim = get_next_dimension(filled)
+
+    if next_dim is None:
+        # 全部问完了，生成最终画像
+        full = generate_final_profile(profile, messages)
         profile = full["profile"]
         report = full["report"]
 
@@ -66,112 +120,61 @@ async def profile_chat(req: ChatRequest):
         save_profile(req.user_id, profile)
 
         return {
-            "user_id": req.user_id,
             "reply": report,
             "profile": profile,
-            "filled": count_filled(profile),
-            "total": len(PROFILE_DIMENSIONS),
+            "visual": full.get("visual"),
+            "current_dim": None,
+            "filled": len(filled),
+            "total": len(DIMENSIONS_ORDER),
             "done": True,
         }
 
-    # 还没完，AI 问下一个问题
-    question = result["question"]
+    # 问下一个维度
+    question = ask_dimension_question(
+        next_dim["key"], next_dim["label"], next_dim["desc"],
+        messages, profile
+    )
     messages.append({"role": "assistant", "content": question})
     save_chat_session(req.user_id, messages)
     save_profile(req.user_id, profile)
 
     return {
-        "user_id": req.user_id,
         "reply": question,
         "profile": profile,
-        "filled": filled_count,
-        "total": len(PROFILE_DIMENSIONS),
+        "current_dim": {"key": next_dim["key"], "label": next_dim["label"]},
+        "filled": len(filled),
+        "total": len(DIMENSIONS_ORDER),
         "done": False,
     }
-
-
-@router.get("/chat/stream")
-async def profile_chat_stream(user_id: int, message: str):
-    """SSE 流式版本（前端用这个）"""
-    import asyncio
-
-    async def event_stream():
-        import concurrent.futures
-        loop = asyncio.get_running_loop()
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            sess = get_chat_session(user_id)
-            messages = sess["messages"] if sess else []
-            profile = sess.get("profile", {}) if sess else {}
-
-            messages.append({"role": "user", "content": message})
-            profile = await loop.run_in_executor(pool, extract_current_answer, messages, profile)
-            filled_count = count_filled(profile)
-            result = await loop.run_in_executor(pool, ask_question, messages, profile)
-
-            if result["ready"] or filled_count >= 5:
-                full = await loop.run_in_executor(pool, generate_profile, messages)
-                profile = full["profile"]
-                report = full["report"]
-                messages.append({"role": "assistant", "content": report})
-                save_chat_session(user_id, messages)
-                save_profile(user_id, profile)
-
-                data = {
-                    "reply": report,
-                    "profile": profile,
-                    "filled": count_filled(profile),
-                    "total": len(PROFILE_DIMENSIONS),
-                    "done": True,
-                }
-            else:
-                question = result["question"]
-                messages.append({"role": "assistant", "content": question})
-                save_chat_session(user_id, messages)
-                save_profile(user_id, profile)
-
-                data = {
-                    "reply": question,
-                    "profile": profile,
-                    "filled": filled_count,
-                    "total": len(PROFILE_DIMENSIONS),
-                    "done": False,
-                }
-
-        yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-        yield "data: [DONE]\n\n"
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
 
 
 @router.get("/{user_id}")
 def get_user_profile(user_id: int):
     """获取用户画像"""
-    profile = get_profile(user_id)
-    if not profile:
+    p = get_profile(user_id)
+    if not p:
         return {"user_id": user_id, "profile": None, "exists": False}
     return {
         "user_id": user_id,
-        "profile": profile["profile"],
-        "filled": count_filled(profile["profile"]),
-        "total": len(PROFILE_DIMENSIONS),
+        "profile": p["profile"],
+        "filled": sum(1 for v in p["profile"].values() if v and v.strip()),
+        "total": len(DIMENSIONS_ORDER),
         "exists": True,
-        "updated_at": profile["updated_at"],
+        "updated_at": p["updated_at"],
     }
 
 
 @router.delete("/{user_id}/reset")
 def reset_profile(user_id: int):
-    """重置画像"""
     from app.database import execute
-    execute("UPDATE chat_sessions SET is_active = FALSE WHERE user_id = %s AND session_type = 'profile_building'", (user_id,))
+    execute(
+        "UPDATE chat_sessions SET is_active = FALSE "
+        "WHERE user_id = %s AND session_type = 'profile_building'",
+        (user_id,)
+    )
     return {"user_id": user_id, "status": "reset"}
 
 
 @router.get("/meta/dimensions")
 def get_dimensions():
-    """返回所有画像维度定义"""
-    return PROFILE_DIMENSIONS
+    return {"dimensions": {k: v for k, v in PROFILE_DIMENSIONS.items()}}

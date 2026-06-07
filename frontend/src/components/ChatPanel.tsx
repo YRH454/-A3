@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
-import { streamChat, startProfile } from '../services/api'
+import { startProfile, sendMessage } from '../services/api'
 
 const USER_ID = 1
 
 export default function ChatPanel() {
-  const { messages, isLoading, addMessage, setProfile, setStage, setLoading } = useChatStore()
+  const {
+    messages, isLoading, done,
+    addMessage, setProfile, setVisual, setCurrentDim,
+    setFilled, setLoading, setDone,
+  } = useChatStore()
   const [input, setInput] = useState('')
   const [hasStarted, setHasStarted] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const abortRef = useRef<(() => void) | null>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' })
@@ -18,7 +21,7 @@ export default function ChatPanel() {
 
   useEffect(() => { scrollToBottom() }, [messages, scrollToBottom])
 
-  // Auto-init: AI starts the conversation
+  // Auto-start: AI kicks off with first question
   useEffect(() => {
     if (hasStarted) return
     setHasStarted(true)
@@ -26,50 +29,38 @@ export default function ChatPanel() {
     startProfile(USER_ID)
       .then((data) => {
         addMessage({ role: 'assistant', content: data.reply })
+        if (data.current_dim) setCurrentDim(data.current_dim)
+        if (data.profile) setProfile(data.profile)
+        setFilled(data.filled || 0)
         setLoading(false)
       })
-      .catch(() => {
-        setLoading(false)
-      })
-  }, [hasStarted, addMessage, setLoading])
+      .catch(() => setLoading(false))
+  }, [hasStarted, addMessage, setCurrentDim, setProfile, setFilled, setLoading])
 
   const handleSend = () => {
     const text = input.trim()
-    if (!text || isLoading) return
+    if (!text || isLoading || done) return
 
     addMessage({ role: 'user', content: text })
     setInput('')
     setLoading(true)
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-    }
-
-    abortRef.current?.()
-    abortRef.current = streamChat(
-      USER_ID,
-      text,
-      (data) => {
-        if (data.reply) {
-          addMessage({ role: 'assistant', content: data.reply })
-        }
-        if (data.stage) {
-          setStage(data.stage)
-        }
-        if (data.profile && Object.keys(data.profile).length > 0) {
-          setProfile(data.profile)
-        }
-      },
-      () => {
+    sendMessage(USER_ID, text)
+      .then((data) => {
+        addMessage({ role: 'assistant', content: data.reply })
+        if (data.profile) setProfile(data.profile)
+        if (data.visual) setVisual(data.visual)
+        if (data.current_dim) setCurrentDim(data.current_dim)
+        else setCurrentDim(null)
+        setFilled(data.filled || 0)
+        setDone(data.done || false)
         setLoading(false)
-        abortRef.current = null
-      },
-      (err) => {
+      })
+      .catch((err) => {
         console.error(err)
         setLoading(false)
-        abortRef.current = null
-      },
-    )
+      })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -93,20 +84,19 @@ export default function ChatPanel() {
       {isEmpty ? (
         <div className="chat-welcome">
           <div className="chat-welcome-icon">?</div>
-          <h2>开始构建你的学习画像</h2>
-          <p>
-            我会通过对话了解你的学习背景、风格和目标，
-            帮你定制专属的个性化学习方案。
-            放心，就像朋友聊天一样自然。
-          </p>
+          <h2>构建你的学习画像</h2>
+          <p>AI会从7个维度逐项了解你，请如实回答，帮你生成专属学习方案。</p>
+          {isLoading && (
+            <div className="typing-dots" style={{ marginTop: 16 }}>
+              <span /><span /><span />
+            </div>
+          )}
         </div>
       ) : (
         <div className="chat-messages">
           {messages.map((msg, i) => (
             <div key={i} className={`chat-msg ${msg.role}`}>
-              <div className="chat-msg-avatar">
-                {msg.role === 'user' ? '你' : 'AI'}
-              </div>
+              <div className="chat-msg-avatar">{msg.role === 'user' ? '你' : 'AI'}</div>
               <div className="chat-msg-bubble">
                 {msg.content.split('\n').map((line, j) => (
                   <p key={j}>{line || ' '}</p>
@@ -114,13 +104,11 @@ export default function ChatPanel() {
               </div>
             </div>
           ))}
-          {isLoading && (
+          {isLoading && !done && (
             <div className="chat-msg assistant">
               <div className="chat-msg-avatar">AI</div>
               <div className="chat-msg-bubble">
-                <div className="typing-dots">
-                  <span /><span /><span />
-                </div>
+                <div className="typing-dots"><span /><span /><span /></div>
               </div>
             </div>
           )}
@@ -134,17 +122,18 @@ export default function ChatPanel() {
           value={input}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder={isEmpty ? '介绍一下你自己吧，比如你的专业和年级...' : '输入消息...'}
+          placeholder={
+            done ? '画像构建完成！' :
+            isEmpty ? '等待AI提问...' : '输入你的回答...'
+          }
           rows={1}
-          disabled={isLoading}
+          disabled={isLoading || done}
         />
         <button
           className="chat-send-btn"
           onClick={handleSend}
-          disabled={!input.trim() || isLoading}
-        >
-          ↑
-        </button>
+          disabled={!input.trim() || isLoading || done}
+        >↑</button>
       </div>
     </div>
   )

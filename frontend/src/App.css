@@ -374,3 +374,73 @@
 .profile-dim-card.filled .profile-dim-value {
   color: var(--text-primary);
 }
+
+.profile-dim-card.current {
+  border-color: var(--accent-gold);
+  background: #FFFAF0;
+  box-shadow: 0 0 12px rgba(222, 176, 64, 0.15);
+  animation: pulseBorder 2s ease-in-out infinite;
+}
+
+@keyframes pulseBorder {
+  0%, 100% { border-color: var(--accent-gold); }
+  50% { border-color: #F0D060; }
+}
+
+.profile-dim-card.current .profile-dim-label {
+  color: var(--accent-deep);
+  font-size: 13px;
+}
+
+.profile-visual-section {
+  padding: 12px 24px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--accent-warm), var(--accent-deep));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.radar-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.radar-label {
+  width: 56px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.radar-track {
+  flex: 1;
+  height: 6px;
+  background: #F0EBE0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.radar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-sage), #2D6B5A);
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.radar-score {
+  width: 20px;
+  font-size: 11px;
+  color: var(--accent-sage);
+  font-weight: 600;
+}
