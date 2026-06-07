@@ -1,0 +1,31 @@
+# Office temp files
+~$*.docx
+~$*.pptx
+~$*.xlsx
+.~*.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Screenshots (keep only if needed)
+page_screenshot.png
+
+# Claude
+.claude/
