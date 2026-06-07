@@ -1,324 +1,207 @@
-"""学生画像智能体 — 基于 LangGraph 的对话式画像构建
+"""学生画像智能体 — AI主动提问，一问一答，对话结束后自动生成画像"""
 
-借鉴 Agent4Edu 的 3 模块架构：认知画像 + 行为风格 + 动态记忆
-对话流程：问候→基础信息→深层挖掘→画像确认→持续更新
-"""
 import json
-from dataclasses import dataclass, field
-from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph, START, END
 from app.services.llm import chat_qwen
 
-# ---- 画像维度定义 ----
 PROFILE_DIMENSIONS = {
-    "knowledge_base": "知识基础：先修课程掌握程度、专业知识水平",
-    "learning_style": "学习风格：视觉/听觉/读写/动手型(VARK)偏好",
-    "cognitive_ability": "认知能力：逻辑推理、问题解决、记忆能力",
-    "weak_points": "易错点偏好：高频错误知识点、薄弱环节",
-    "interests": "兴趣方向：偏好的学习主题和内容类型",
-    "learning_pace": "学习节奏：学习速度、专注时长、最佳学习时段",
-    "goals": "目标导向：短期/长期学习目标、职业规划",
-    "interaction_pref": "交互偏好：简洁/详细、文字/语音，对话风格偏好",
+    "knowledge_base": "知识基础：学过哪些课程、掌握哪些技能、当前水平",
+    "learning_style": "学习风格：喜欢看视频/读文档/动手做/听讲解，哪种方式学得最好",
+    "weak_points": "学习难点：哪些知识点觉得难、哪些方面需要加强",
+    "interests": "兴趣方向：对什么主题或领域最感兴趣、想深入学什么",
+    "goals": "学习目标：为什么学、想达到什么水平、职业方向",
+    "learning_pace": "学习节奏：每天能投入多少时间、喜欢集中学还是分散学",
+    "interaction_pref": "交互偏好：喜欢简洁直接还是详细讲解、文字还是语音",
 }
 
-CONVERSATION_STAGES = [
-    "greeting",           # 自我介绍，说明目的
-    "basic_info",         # 收集专业、年级等基础信息
-    "learning_style",     # 了解学习风格偏好
-    "knowledge_check",    # 了解知识基础和薄弱点
-    "goals_interests",    # 了解学习目标和兴趣
-    "profile_confirm",    # 展示画像摘要，请求确认
-    "done",               # 画像完成，可开始学习
-]
+QUESTION_SUGGESTIONS = {
+    "knowledge_base": [
+        "先了解一下你的基础 —— 你之前学过哪些课程或技能？哪些是你觉得掌握得比较好的？",
+        "你目前在学什么专业或方向？之前接触过相关的内容吗？",
+    ],
+    "learning_style": [
+        "你平时学习新东西的时候，更喜欢哪种方式？看视频讲解、读文档教程、还是直接动手做项目？",
+        "有没有哪种学习方式让你觉得效率特别高？",
+    ],
+    "weak_points": [
+        "在学习过程中，哪些类型的知识点让你觉得比较吃力？",
+        "回顾一下，有没有哪些内容你反复学习还是觉得没掌握？",
+    ],
+    "interests": [
+        "在课程范围内，你对哪个方向最感兴趣？有没有特别想深入了解的主题？",
+        "除了课内的内容，你还对哪些相关的领域好奇？",
+    ],
+    "goals": [
+        "你希望通过学习达成什么目标？比如通过考试、做出项目、或者为职业做准备？",
+        "你对未来的职业方向有什么想法？希望成为什么样的人？",
+    ],
+    "learning_pace": [
+        "你平时大概每天能花多少时间学习？喜欢一口气学很久还是短时间多次？",
+        "你在什么时间段学习状态最好？",
+    ],
+    "interaction_pref": [
+        "在跟我交流的时候，你希望我怎么回答你？简洁直接一点还是详细展开？",
+    ],
+}
 
-# ---- State Definition ----
-class ProfileState(TypedDict):
-    messages: list          # 对话历史 [{role, content}]
-    stage: str              # 当前对话阶段
-    profile: dict           # 已抽取的画像数据
-    collected_dimensions: list  # 已收集的维度
-    user_id: int | None     # 用户ID
+ASK_PROMPT = """你是一个专业的学习顾问，正在通过一问一答的方式了解学生，为其构建学习画像。
 
-# ---- LLM Prompts ----
-SYSTEM_PROMPT = """你是一个友好的学习顾问，正在帮助学生构建个人学习画像。你的任务是：
-
-1. 通过自然对话了解学生的学习情况（不要像填表，要像聊天）
-2. 逐步收集以下维度的信息：{dimensions}
-3. 当前需要收集的维度：{current_dimension}
-4. 已了解的信息：{collected_info}
+你需要从以下维度中选择一个尚未充分了解的维度，提出一个自然、友好的问题：
+{dimensions_status}
 
 对话规则：
-- 每次只关注1-2个维度，不要一次问太多
-- 用开放式问题引导，不要连珠炮式提问
-- 根据学生的回答自然地追问细节
-- 如果学生不清楚某方面，可以给出选项或示例帮助他们思考
-- 对话风格温暖专业，像一位耐心的导师
-- 回答要简短，一般不超过3句话
+- 每次只问一个问题，不要一次问多个
+- 问题要自然，像聊天一样，不要像问卷调查
+- 根据学生之前的回答，选择最合适的下一个维度
+- 如果一个维度已经了解清楚了，就不要重复问
+- 刚开始时优先了解基础信息（知识基础、学习目标）
+- 问题要简短，一般不超过2句话
+- 如果你觉得已经了解了足够多的信息（至少覆盖4-5个维度），在回复最后加上 [READY]
 
-当前阶段：{stage_description}
-如果当前阶段完成了，回复末尾加上 [NEXT_STAGE]"""
-
-EXTRACT_PROFILE_PROMPT = """根据以下对话，提取学生的学习画像信息，返回JSON格式。
-
-对话内容：
+当前对话：
 {conversation}
 
-已抽取的画像：{existing_profile}
+请只输出你要问的下一个问题，不要添加任何其他内容。如果已经了解充分，请输出 [READY]。"""
 
-请从中提取新的或更新的画像信息，只返回JSON（不要markdown标记）：
+GENERATE_PROMPT = """根据以下对话，生成学生的完整学习画像。
+
+对话记录：
+{conversation}
+
+请以学习顾问的口吻，生成一份结构化的学习画像报告。要求：
+1. 用第二人称"你"来写，语气温暖专业
+2. 每个维度写1-2句话的描述
+3. 只描述从对话中获取到的信息，没有获取到的维度标注"待了解"
+4. 在报告末尾，用一句话总结学生的学习特质
+
+画像维度：
+- 知识基础
+- 学习风格
+- 学习难点
+- 兴趣方向
+- 学习目标
+- 学习节奏
+- 交互偏好
+
+直接输出画像报告文本，不要用JSON。"""
+
+EXTRACT_JSON_PROMPT = """根据以下对话记录和学习画像报告，提取结构化的画像JSON。
+
+对话：
+{conversation}
+
+画像报告：
+{report}
+
+请返回JSON格式（不要markdown标记）：
 {{
-  "knowledge_base": "学生对先修课程的掌握情况（如：已学过Python基础，对机器学习有初步了解）",
-  "learning_style": "学习风格偏好（如：visual/auditory/read-write/kinesthetic）",
-  "cognitive_ability": "认知特点（如：逻辑推理较强，但记忆细节需要加强）",
-  "weak_points": "薄弱知识点（如：数学推导、动态规划）",
-  "interests": "兴趣方向（如：对NLP和计算机视觉感兴趣）",
-  "learning_pace": "学习节奏偏好（如：喜欢集中长时间学习，每次2-3小时）",
-  "goals": "学习目标（如：短期通过考试，长期成为AI工程师）",
-  "interaction_pref": "交互偏好（如：喜欢详细解释，配合图示）"
+  "knowledge_base": "一句话描述",
+  "learning_style": "一句话描述",
+  "weak_points": "一句话描述",
+  "interests": "一句话描述",
+  "goals": "一句话描述",
+  "learning_pace": "一句话描述",
+  "interaction_pref": "一句话描述"
 }}
 
-只返回有新信息的字段，没有新信息的字段返回空字符串。"""
-
-# ---- Stage Descriptions ----
-STAGE_DESCRIPTIONS = {
-    "greeting": "向学生打招呼，简短介绍画像构建的目的（帮助他们获得个性化学习体验），然后自然过渡到了解基本信息",
-    "basic_info": "了解学生的专业、年级、当前在学什么课程或技能",
-    "learning_style": "了解学生喜欢怎么学习——看视频？读文档？做练习？喜欢自学还是跟课程？",
-    "knowledge_check": "了解学生对相关领域的熟悉程度，哪里觉得难，哪里觉得有意思",
-    "goals_interests": "了解学生的学习目标和兴趣：为什么学这门课？近期和长期目标是什么？",
-    "profile_confirm": "向学生展示已构建的画像摘要，请他们确认或修正。确认后告知画像已经就绪，可以开始个性化学习了",
-    "done": "画像已确认完成",
-}
-
-# ---- Agent Nodes ----
-
-def greeting_node(state: ProfileState) -> ProfileState:
-    """开场白 + 自然过渡到基础信息收集"""
-    stage = "greeting"
-    resp = chat_qwen([{
-        "role": "system", "content": SYSTEM_PROMPT.format(
-            dimensions=", ".join(PROFILE_DIMENSIONS.keys()),
-            current_dimension="建立初步联系，了解基本背景",
-            collected_info="尚未收集任何信息",
-            stage_description=STAGE_DESCRIPTIONS[stage],
-        )
-    }, *state["messages"]], temperature=0.8, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-    state["stage"] = "basic_info"
-    return state
+只返回JSON。"""
 
 
-def basic_info_node(state: ProfileState) -> ProfileState:
-    """收集专业、年级等基础信息"""
-    existing = json.dumps(state.get("profile", {}), ensure_ascii=False)
-    resp = chat_qwen([{
-        "role": "system", "content": SYSTEM_PROMPT.format(
-            dimensions=", ".join(PROFILE_DIMENSIONS.keys()),
-            current_dimension="专业、年级、当前学习内容",
-            collected_info=existing or "尚无",
-            stage_description=STAGE_DESCRIPTIONS["basic_info"],
-        )
-    }, *state["messages"]], temperature=0.8, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    state["stage"] = "learning_style"
-    return state
+def get_dimensions_status(profile: dict) -> str:
+    """返回每个维度的收集状态"""
+    lines = []
+    for key, desc in PROFILE_DIMENSIONS.items():
+        label = desc.split("：")[0]
+        filled = "已了解" if profile.get(key, "").strip() else "待了解"
+        lines.append(f"- {label}：{filled}")
+    return "\n".join(lines)
 
 
-def learning_style_node(state: ProfileState) -> ProfileState:
-    """了解学习风格偏好"""
-    existing = json.dumps(state.get("profile", {}), ensure_ascii=False)
-    resp = chat_qwen([{
-        "role": "system", "content": SYSTEM_PROMPT.format(
-            dimensions=", ".join(PROFILE_DIMENSIONS.keys()),
-            current_dimension="学习风格偏好（VARK）、喜欢的学习方式",
-            collected_info=existing or "尚无",
-            stage_description=STAGE_DESCRIPTIONS["learning_style"],
-        )
-    }, *state["messages"]], temperature=0.8, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    state["stage"] = "knowledge_check"
-    return state
+def count_filled(profile: dict) -> int:
+    return sum(1 for v in profile.values() if v and v.strip())
 
 
-def knowledge_check_node(state: ProfileState) -> ProfileState:
-    """了解知识基础和薄弱点"""
-    existing = json.dumps(state.get("profile", {}), ensure_ascii=False)
-    resp = chat_qwen([{
-        "role": "system", "content": SYSTEM_PROMPT.format(
-            dimensions=", ".join(PROFILE_DIMENSIONS.keys()),
-            current_dimension="知识基础、学习难点、薄弱环节",
-            collected_info=existing or "尚无",
-            stage_description=STAGE_DESCRIPTIONS["knowledge_check"],
-        )
-    }, *state["messages"]], temperature=0.8, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    state["stage"] = "goals_interests"
-    return state
-
-
-def goals_interests_node(state: ProfileState) -> ProfileState:
-    """了解学习目标和兴趣"""
-    existing = json.dumps(state.get("profile", {}), ensure_ascii=False)
-    resp = chat_qwen([{
-        "role": "system", "content": SYSTEM_PROMPT.format(
-            dimensions=", ".join(PROFILE_DIMENSIONS.keys()),
-            current_dimension="学习目标、职业规划、兴趣方向",
-            collected_info=existing or "尚无",
-            stage_description=STAGE_DESCRIPTIONS["goals_interests"],
-        )
-    }, *state["messages"]], temperature=0.8, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    state["stage"] = "profile_confirm"
-    return state
-
-
-def profile_confirm_node(state: ProfileState) -> ProfileState:
-    """展示画像摘要并请求确认"""
-    profile = state.get("profile", {})
-    summary = _format_profile_summary(profile)
-
-    confirm_msg = {
-        "role": "system",
-        "content": f"""请用友好的语气向学生展示以下学习画像摘要，邀请他们确认或修正：
-
-{summary}
-
-规则：
-- 先对学生的回答表示感谢
-- 逐维度简要展示画像内容
-- 询问"这些描述准确吗？有没有需要调整的地方？"
-- 如果学生确认或提出修正，回复末尾加上 [DONE]"""
-    }
-    resp = chat_qwen([confirm_msg, *state["messages"]], temperature=0.7, max_tokens=512)
-
-    reply = resp.choices[0].message.content
-    state["messages"].append({"role": "assistant", "content": reply})
-
-    if "[DONE]" in reply:
-        state["stage"] = "done"
-    elif "[NEXT_STAGE]" in reply:
-        state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    return state
-
-
-def done_node(state: ProfileState) -> ProfileState:
-    """画像完成"""
-    state["stage"] = "done"
-    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-    complete_msg = {
-        "role": "assistant",
-        "content": "画像构建完成！现在开始，我将根据你的学习特点为你定制个性化的学习资源和计划。你可以随时让我帮你生成学习资料、规划学习路径，或者解答问题。准备好了吗？"
-    }
-    # Avoid duplicate
-    if not state["messages"] or state["messages"][-1].get("content") != complete_msg["content"]:
-        state["messages"].append(complete_msg)
-    return state
-
-
-# ---- Helper Functions ----
-
-def _extract_profile(messages: list, existing: dict) -> dict:
-    """从对话中抽取画像信息"""
-    conversation = "\n".join(
-        f"{'学生' if m['role']=='user' else '顾问'}：{m['content']}"
-        for m in messages[-12:]  # 只看最近12轮
+def ask_question(conversation: list, profile: dict) -> dict:
+    """AI根据当前画像状态，选择下一个维度并生成一个问题"""
+    conv_text = "\n".join(
+        f"{'学生' if m['role'] == 'user' else '顾问'}：{m['content']}"
+        for m in conversation[-20:]
     )
+    dims_status = get_dimensions_status(profile)
+
     resp = chat_qwen([{
         "role": "system",
-        "content": EXTRACT_PROFILE_PROMPT.format(
-            conversation=conversation,
-            existing_profile=json.dumps(existing, ensure_ascii=False)
+        "content": ASK_PROMPT.format(
+            dimensions_status=dims_status,
+            conversation=conv_text,
         )
-    }], temperature=0.3, max_tokens=1024, json_mode=True)
+    }], temperature=0.8, max_tokens=256)
+
+    reply = resp.choices[0].message.content.strip()
+
+    # Check if AI thinks we have enough info
+    if "[READY]" in reply:
+        return {"ready": True, "question": None}
+
+    return {"ready": False, "question": reply}
+
+
+def extract_current_answer(conversation: list, profile: dict) -> dict:
+    """从最新一轮对话中提取画像信息（增量更新）"""
+    conv_text = "\n".join(
+        f"{'学生' if m['role'] == 'user' else '顾问'}：{m['content']}"
+        for m in conversation[-8:]
+    )
+
+    resp = chat_qwen([{
+        "role": "system",
+        "content": f"""从最新对话中提取学生画像信息。只提取本轮对话中明确提到的维度。
+
+已抽取的画像：{json.dumps(profile, ensure_ascii=False)}
+
+请返回JSON（不要markdown标记）：
+{{{", ".join(f'"{k}": "一句话描述或空字符串"' for k in PROFILE_DIMENSIONS)}}}
+
+只返回本轮新获取的信息，没有涉及的维度返回空字符串。"""
+    }], temperature=0.3, max_tokens=512, json_mode=True)
 
     try:
         new_data = json.loads(resp.choices[0].message.content)
-        # Merge: new non-empty values override existing
-        merged = {**existing}
+        merged = {**profile}
         for k, v in new_data.items():
             if v and v.strip() and k in PROFILE_DIMENSIONS:
                 merged[k] = v.strip()
         return merged
     except (json.JSONDecodeError, Exception):
-        return existing
+        return profile
 
 
-def _count_filled_dimensions(profile: dict) -> int:
-    return sum(1 for v in profile.values() if v and v.strip())
+def generate_profile(conversation: list) -> dict:
+    """对话结束后，生成完整的画像报告和结构化数据"""
+    conv_text = "\n".join(
+        f"{'学生' if m['role'] == 'user' else '顾问'}：{m['content']}"
+        for m in conversation
+    )
 
+    # Step 1: 生成可读的画像报告
+    report_resp = chat_qwen([{
+        "role": "system",
+        "content": GENERATE_PROMPT.format(conversation=conv_text),
+    }], temperature=0.7, max_tokens=1024)
 
-def _format_profile_summary(profile: dict) -> str:
-    """格式化画像为可读摘要"""
-    lines = []
-    for key, desc in PROFILE_DIMENSIONS.items():
-        label = desc.split("：")[0]
-        value = profile.get(key, "")
-        icon = "✅" if value and value.strip() else "⬜"
-        text = value if value else "待了解"
-        lines.append(f"{icon} {label}：{text}")
-    return "\n".join(lines)
+    report = report_resp.choices[0].message.content.strip()
 
+    # Step 2: 从报告中提取结构化JSON
+    json_resp = chat_qwen([{
+        "role": "system",
+        "content": EXTRACT_JSON_PROMPT.format(conversation=conv_text, report=report),
+    }], temperature=0.2, max_tokens=512, json_mode=True)
 
-# ---- Build Graph ----
+    try:
+        profile_json = json.loads(json_resp.choices[0].message.content)
+    except (json.JSONDecodeError, Exception):
+        profile_json = {}
 
-def build_profile_graph() -> StateGraph:
-    """构建画像对话图的编译版本"""
-    builder = StateGraph(ProfileState)
-
-    builder.add_node("greeting", greeting_node)
-    builder.add_node("basic_info", basic_info_node)
-    builder.add_node("learning_style", learning_style_node)
-    builder.add_node("knowledge_check", knowledge_check_node)
-    builder.add_node("goals_interests", goals_interests_node)
-    builder.add_node("profile_confirm", profile_confirm_node)
-    builder.add_node("done", done_node)
-
-    # Route from start
-    builder.add_edge(START, "greeting")
-
-    # Stage routing: check current stage and route accordingly
-    def route_by_stage(state: ProfileState) -> str:
-        stage = state.get("stage", "greeting")
-        route_map = {
-            "greeting": "basic_info",
-            "basic_info": "learning_style",
-            "learning_style": "knowledge_check",
-            "knowledge_check": "goals_interests",
-            "goals_interests": "profile_confirm",
-            "profile_confirm": "done",
-            "done": "done",
-        }
-        target = route_map.get(stage)
-        if target is None:
-            return END
-        # Safety: prevent infinite loops by checking message count
-        if len(state.get("messages", [])) > 40:
-            return END
-        return target
-
-    builder.add_conditional_edges("greeting", route_by_stage)
-    builder.add_conditional_edges("basic_info", route_by_stage)
-    builder.add_conditional_edges("learning_style", route_by_stage)
-    builder.add_conditional_edges("knowledge_check", route_by_stage)
-    builder.add_conditional_edges("goals_interests", route_by_stage)
-    builder.add_conditional_edges("profile_confirm", route_by_stage)
-    builder.add_edge("done", END)
-
-    return builder
-
-
-profile_graph = build_profile_graph().compile()
+    return {
+        "report": report,
+        "profile": profile_json,
+    }
