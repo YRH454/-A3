@@ -1,51 +1,61 @@
 const BASE = 'http://localhost:8000/api/v1'
 
-export async function startProfile(userId: number) {
-  const res = await fetch(`${BASE}/profile/start?user_id=${userId}`, { method: 'POST' })
+// ---- Auth ----
+export async function loginApi(email: string, password: string) {
+  const res = await fetch(`${BASE}/auth/login`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!res.ok) throw await res.json()
+  return res.json()
+}
+
+export async function registerApi(username: string, email: string, password: string) {
+  const res = await fetch(`${BASE}/auth/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password }),
+  })
+  if (!res.ok) throw await res.json()
+  return res.json()
+}
+
+export async function guestLoginApi() {
+  const res = await fetch(`${BASE}/auth/guest`, { method: 'POST' })
+  if (!res.ok) throw await res.json()
+  return res.json()
+}
+
+// ---- Profile ----
+export async function startProfile(userId: number, token?: string) {
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  const res = await fetch(`${BASE}/profile/start?user_id=${userId}`, { method: 'POST', headers })
   if (!res.ok) throw new Error(`Start error: ${res.status}`)
   return res.json()
 }
 
 export async function sendMessage(userId: number, message: string) {
   const res = await fetch(`${BASE}/profile/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId, message }),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
+// ---- SSE stream ----
 export function streamChat(
-  userId: number,
-  message: string,
-  onChunk: (data: any) => void,
-  onDone: () => void,
-  onError: (err: Error) => void,
+  userId: number, message: string,
+  onChunk: (data: any) => void, onDone: () => void, onError: (err: Error) => void,
 ) {
   const url = `${BASE}/profile/chat/stream?user_id=${userId}&message=${encodeURIComponent(message)}`
-  const eventSource = new EventSource(url)
-
-  eventSource.onmessage = (event) => {
-    if (event.data === '[DONE]') {
-      eventSource.close()
-      onDone()
-      return
-    }
-    try {
-      const data = JSON.parse(event.data)
-      onChunk(data)
-    } catch {
-      // ignore parse errors for partial data
-    }
+  const es = new EventSource(url)
+  es.onmessage = (e) => {
+    if (e.data === '[DONE]') { es.close(); onDone(); return }
+    try { onChunk(JSON.parse(e.data)) } catch { /* ignore */ }
   }
-
-  eventSource.onerror = () => {
-    eventSource.close()
-    onError(new Error('连接中断，请重试'))
-  }
-
-  return () => eventSource.close()
+  es.onerror = () => { es.close(); onError(new Error('连接中断')) }
+  return () => es.close()
 }
 
 export async function getProfile(userId: number) {

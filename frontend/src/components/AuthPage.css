@@ -1,0 +1,199 @@
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(135deg, #F5F0E8 0%, #EDE5D8 30%, #F2ECE0 60%, #F9F6F0 100%);
+  overflow: hidden;
+}
+
+.auth-bg-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(212,132,90,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(91,140,123,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(222,176,64,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.auth-card {
+  position: relative;
+  display: flex;
+  max-width: 900px;
+  width: 95%;
+  min-height: 560px;
+  background: #FFFAF5;
+  border-radius: 20px;
+  box-shadow:
+    0 4px 32px rgba(58,50,44,0.08),
+    0 1px 4px rgba(58,50,44,0.04);
+  overflow: hidden;
+  animation: cardIn 0.6s ease-out;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Left: Brand + Role Cards ---- */
+.auth-left {
+  flex: 0 0 380px;
+  background: linear-gradient(170deg, #3C342E 0%, #2C2520 100%);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-left::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,132,90,0.15), transparent 70%);
+}
+
+.auth-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #D4845A, #C0603A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(212,132,90,0.3);
+}
+
+.auth-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #FFFAF5;
+  margin: 0 0 4px;
+  letter-spacing: 1px;
+}
+
+.auth-tagline {
+  font-size: 13px;
+  color: #B8A898;
+  margin: 0 0 24px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* Role cards */
+.auth-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.role-card:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.role-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.admin-role .role-icon { background: rgba(222,176,64,0.2); color: #E8C840; }
+.user-role .role-icon { background: rgba(91,140,123,0.2); color: #5B8C7B; }
+.guest-role .role-icon { background: rgba(180,160,140,0.2); color: #B4A08C; }
+
+.role-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E5DDD0;
+}
+
+.role-desc {
+  font-size: 11px;
+  color: #9C9084;
+  margin-top: 2px;
+}
+
+/* ---- Right: Forms ---- */
+.auth-right {
+  flex: 1;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.auth-tabs .ant-tabs-tab {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  color: #B8ADA2;
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #E8E0D4;
+}
+
+.guest-btn {
+  height: 48px;
+  border: 2px dashed #D4C8B8 !important;
+  color: #8C7F72 !important;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.guest-btn:hover {
+  border-color: #D4845A !important;
+  color: #D4845A !important;
+  background: rgba(212,132,90,0.04) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-card { flex-direction: column; }
+  .auth-left { flex: 0 0 auto; padding: 28px 24px; }
+  .auth-roles { display: none; }
+  .auth-right { padding: 24px; }
+}

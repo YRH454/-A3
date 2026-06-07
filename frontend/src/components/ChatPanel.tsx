@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
+import { useAuthStore } from '../stores/authStore'
 import { startProfile, sendMessage } from '../services/api'
-
-const USER_ID = 1
 
 export default function ChatPanel() {
   const {
@@ -10,6 +9,7 @@ export default function ChatPanel() {
     addMessage, setProfile, setVisual, setCurrentDim,
     setFilled, setLoading, setDone,
   } = useChatStore()
+  const user = useAuthStore((s) => s.user)!
   const [input, setInput] = useState('')
   const [hasStarted, setHasStarted] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
@@ -26,7 +26,7 @@ export default function ChatPanel() {
     if (hasStarted) return
     setHasStarted(true)
     setLoading(true)
-    startProfile(USER_ID)
+    startProfile(user.id)
       .then((data) => {
         addMessage({ role: 'assistant', content: data.reply })
         if (data.current_dim) setCurrentDim(data.current_dim)
@@ -46,7 +46,7 @@ export default function ChatPanel() {
     setLoading(true)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
-    sendMessage(USER_ID, text)
+    sendMessage(user.id, text)
       .then((data) => {
         addMessage({ role: 'assistant', content: data.reply })
         if (data.profile) setProfile(data.profile)

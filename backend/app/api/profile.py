@@ -19,8 +19,9 @@ router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
 def start_profile(user_id: int):
     """AI 主动问第一个维度的问题"""
     sess = get_chat_session(user_id)
-    if sess and sess.get("messages"):
-        # 已有对话，返回当前进度
+
+    # 恢复已有会话的进度
+    if sess and sess.get("messages") and len(sess["messages"]) > 0:
         profile = sess.get("profile", {})
         filled = {k for k, v in profile.items() if v and v.strip()}
         dim = get_next_dimension(filled)
@@ -37,9 +38,15 @@ def start_profile(user_id: int):
                 "total": len(DIMENSIONS_ORDER),
                 "done": False,
             }
-        return {"reply": "你的学习画像已经构建完成！", "done": True}
+        # 所有维度已完成，重置并重新开始
+        from app.database import execute
+        execute(
+            "UPDATE chat_sessions SET is_active = FALSE "
+            "WHERE user_id = %s AND session_type = 'profile_building'",
+            (user_id,)
+        )
 
-    # 全新会话：问第一个维度
+    # 全新开始
     dim = DIMENSIONS_ORDER[0]
     key, label, desc = dim
     question = ask_dimension_question(key, label, desc, [], {})
