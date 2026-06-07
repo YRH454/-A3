@@ -27,7 +27,7 @@ class ProfileResponse(BaseModel):
 
 
 @router.post("/chat", response_model=ProfileResponse)
-def profile_chat(req: ChatRequest):
+async def profile_chat(req: ChatRequest):
     """非流式对话（备用）"""
     sess = get_chat_session(req.user_id)
     messages = sess["messages"] if sess else []
@@ -42,7 +42,7 @@ def profile_chat(req: ChatRequest):
         "user_id": req.user_id,
     }
 
-    result = profile_graph.invoke(initial_state)
+    result = await asyncio.to_thread(profile_graph.invoke, initial_state)
 
     save_chat_session(req.user_id, result["messages"])
     if result.get("profile"):
@@ -76,8 +76,7 @@ async def profile_chat_stream(user_id: int, message: str):
     }
 
     async def event_stream():
-        # Run in background thread to not block
-        result = profile_graph.invoke(initial_state)
+        result = await asyncio.to_thread(profile_graph.invoke, initial_state)
         reply = result["messages"][-1]["content"]
 
         # Save

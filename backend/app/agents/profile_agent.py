@@ -106,7 +106,7 @@ def greeting_node(state: ProfileState) -> ProfileState:
 
     reply = resp.choices[0].message.content
     state["messages"].append({"role": "assistant", "content": reply})
-    state["stage"] = "basic_info" if "[NEXT_STAGE]" in reply else stage
+    state["stage"] = "basic_info"
     return state
 
 
@@ -124,12 +124,8 @@ def basic_info_node(state: ProfileState) -> ProfileState:
 
     reply = resp.choices[0].message.content
     state["messages"].append({"role": "assistant", "content": reply})
-
-    # Auto-advance logic
-    if "[NEXT_STAGE]" in reply:
-        state["stage"] = "learning_style"
-        # Extract profile incrementally
-        state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["stage"] = "learning_style"
     return state
 
 
@@ -147,10 +143,8 @@ def learning_style_node(state: ProfileState) -> ProfileState:
 
     reply = resp.choices[0].message.content
     state["messages"].append({"role": "assistant", "content": reply})
-
-    if "[NEXT_STAGE]" in reply:
-        state["stage"] = "knowledge_check"
-        state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["stage"] = "knowledge_check"
     return state
 
 
@@ -168,10 +162,8 @@ def knowledge_check_node(state: ProfileState) -> ProfileState:
 
     reply = resp.choices[0].message.content
     state["messages"].append({"role": "assistant", "content": reply})
-
-    if "[NEXT_STAGE]" in reply:
-        state["stage"] = "goals_interests"
-        state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["stage"] = "goals_interests"
     return state
 
 
@@ -189,10 +181,8 @@ def goals_interests_node(state: ProfileState) -> ProfileState:
 
     reply = resp.choices[0].message.content
     state["messages"].append({"role": "assistant", "content": reply})
-
-    if "[NEXT_STAGE]" in reply:
-        state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
-        state["stage"] = "profile_confirm"
+    state["profile"] = _extract_profile(state["messages"], state.get("profile", {}))
+    state["stage"] = "profile_confirm"
     return state
 
 
@@ -303,19 +293,22 @@ def build_profile_graph() -> StateGraph:
     # Stage routing: check current stage and route accordingly
     def route_by_stage(state: ProfileState) -> str:
         stage = state.get("stage", "greeting")
-        if stage == "greeting":
-            return "basic_info"
-        elif stage == "learning_style":
-            return "learning_style"
-        elif stage == "knowledge_check":
-            return "knowledge_check"
-        elif stage == "goals_interests":
-            return "goals_interests"
-        elif stage == "profile_confirm":
-            return "profile_confirm"
-        elif stage == "done":
-            return "done"
-        return END
+        route_map = {
+            "greeting": "basic_info",
+            "basic_info": "learning_style",
+            "learning_style": "knowledge_check",
+            "knowledge_check": "goals_interests",
+            "goals_interests": "profile_confirm",
+            "profile_confirm": "done",
+            "done": "done",
+        }
+        target = route_map.get(stage)
+        if target is None:
+            return END
+        # Safety: prevent infinite loops by checking message count
+        if len(state.get("messages", [])) > 40:
+            return END
+        return target
 
     builder.add_conditional_edges("greeting", route_by_stage)
     builder.add_conditional_edges("basic_info", route_by_stage)

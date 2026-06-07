@@ -1,4 +1,5 @@
 """LLM 客户端封装：Qwen(主力)、DeepSeek(推理)、Seedance(视频)、Mimo(多模态)"""
+import httpx
 from openai import OpenAI
 from app.config import (
     QWEN_API_KEY, QWEN_MODEL, QWEN_BASE_URL,
@@ -7,10 +8,12 @@ from app.config import (
     MIMO_API_KEY, MIMO_BASE_URL,
 )
 
-qwen = OpenAI(api_key=QWEN_API_KEY, base_url=QWEN_BASE_URL)
-deepseek = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-seedance = OpenAI(api_key=SEEDANCE_API_KEY, base_url=SEEDANCE_BASE_URL)
-mimo = OpenAI(api_key=MIMO_API_KEY, base_url=MIMO_BASE_URL) if MIMO_BASE_URL else None
+http_client = httpx.Client(proxy="http://127.0.0.1:7897", timeout=60)
+
+qwen = OpenAI(api_key=QWEN_API_KEY, base_url=QWEN_BASE_URL, http_client=http_client)
+seedance = OpenAI(api_key=SEEDANCE_API_KEY, base_url=SEEDANCE_BASE_URL, http_client=http_client)
+deepseek = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, http_client=http_client)
+mimo = OpenAI(api_key=MIMO_API_KEY, base_url=MIMO_BASE_URL, http_client=http_client) if MIMO_BASE_URL else None
 
 
 def chat_qwen(messages: list, temperature=0.7, max_tokens=2048, json_mode=False):
