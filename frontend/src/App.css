@@ -444,3 +444,155 @@
   color: var(--accent-sage);
   font-weight: 600;
 }
+
+/* ---- Profile Finish Card ---- */
+.profile-finish-card {
+  position: relative;
+  margin: 8px 0;
+  border-radius: 18px;
+  background: #FFFBF7;
+  border: 1px solid #EBE0D2;
+  overflow: hidden;
+  animation: cardReveal 0.6s ease-out;
+  box-shadow:
+    0 4px 24px rgba(58,50,44,0.06),
+    0 1px 4px rgba(58,50,44,0.03);
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pfc-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pfc-header {
+  position: relative;
+  padding: 20px 20px 0;
+  text-align: center;
+}
+
+.pfc-tag {
+  display: inline-block;
+  padding: 8px 22px;
+  border-radius: 22px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  margin-bottom: 6px;
+}
+
+.pfc-atmo {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Score bars */
+.pfc-scores {
+  position: relative;
+  padding: 18px 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pfc-score-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pfc-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pfc-score-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.pfc-score-val {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pfc-score-val small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.pfc-score-track {
+  height: 7px;
+  background: #F0EAE0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pfc-score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bottom */
+.pfc-bottom {
+  position: relative;
+  padding: 8px 20px 18px;
+}
+
+.pfc-columns {
+  display: flex;
+  gap: 16px;
+}
+
+.pfc-col {
+  flex: 1;
+}
+
+.pfc-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.pfc-tag-sm {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(91,140,123,0.1);
+  color: var(--accent-sage);
+  font-size: 11px;
+  font-weight: 500;
+  margin: 0 4px 4px 0;
+}
+
+.pfc-tag-sm.outline {
+  background: transparent;
+  border: 1px solid #E0D5C5;
+  color: var(--text-secondary);
+}
+
+.pfc-quote {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-left: 3px solid;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-secondary);
+  background: rgba(0,0,0,0.02);
+  border-radius: 0 6px 6px 0;
+}

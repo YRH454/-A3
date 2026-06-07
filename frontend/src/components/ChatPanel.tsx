@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
 import { startProfile, sendMessage } from '../services/api'
+import ProfileCard from './ProfileCard'
 
 export default function ChatPanel() {
   const {
@@ -94,6 +95,7 @@ export default function ChatPanel() {
         </div>
       ) : (
         <div className="chat-messages">
+          {done && <ProfileCard />}
           {messages.map((msg, i) => (
             <div key={i} className={`chat-msg ${msg.role}`}>
               <div className="chat-msg-avatar">{msg.role === 'user' ? '你' : 'AI'}</div>
