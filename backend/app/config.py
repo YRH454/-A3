@@ -1,0 +1,34 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MYSQL_HOST = os.getenv("MYSQL_HOST")
+MYSQL_PORT = int(os.getenv("MYSQL_PORT", 3306))
+MYSQL_USER = os.getenv("MYSQL_USER")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
+
+OSS_ENDPOINT = os.getenv("OSS_ENDPOINT")
+OSS_BUCKET = os.getenv("OSS_BUCKET")
+OSS_ACCESS_KEY_ID = os.getenv("OSS_ACCESS_KEY_ID")
+OSS_ACCESS_KEY_SECRET = os.getenv("OSS_ACCESS_KEY_SECRET")
+
+QWEN_API_KEY = os.getenv("QWEN_API_KEY")
+QWEN_MODEL = os.getenv("QWEN_MODEL")
+QWEN_BASE_URL = os.getenv("QWEN_BASE_URL")
+
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL")
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
+
+SEEDANCE_API_KEY = os.getenv("SEEDANCE_API_KEY")
+SEEDANCE_MODEL = os.getenv("SEEDANCE_MODEL")
+SEEDANCE_BASE_URL = os.getenv("SEEDANCE_BASE_URL")
+
+MIMO_API_KEY = os.getenv("MIMO_API_KEY")
+MIMO_BASE_URL = os.getenv("MIMO_BASE_URL")
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 1440))
