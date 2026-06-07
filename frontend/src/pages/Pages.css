@@ -193,3 +193,56 @@
   font-size: 13px;
   color: #8C7F72;
 }
+
+/* ---- Dashboard Wheel ---- */
+.dash-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.dash-header .page-title {
+  margin-bottom: 4px;
+}
+
+.dash-wheel-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.dash-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 32px;
+  margin-top: 8px;
+  background: rgba(255,250,245,0.8);
+  border: 1px solid #E8E0D4;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(58,50,44,0.03);
+}
+
+.dash-stat-item {
+  text-align: center;
+  padding: 4px 20px;
+}
+
+.dash-stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.dash-stat-txt {
+  font-size: 11px;
+  color: #8C7F72;
+  margin-top: 2px;
+}
+
+.dash-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: #E8E0D4;
+}

@@ -1,0 +1,133 @@
+.wheel-container {
+  position: relative;
+  width: 440px;
+  height: 440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer glow */
+.wheel-glow {
+  position: absolute;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,132,90,0.06) 0%, transparent 70%);
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Decorative rings */
+.wheel-rings {
+  position: absolute;
+  width: 440px; height: 440px;
+  pointer-events: none;
+  animation: ringSpin 60s linear infinite;
+}
+
+@keyframes ringSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Main wheel */
+.wheel {
+  position: relative;
+  width: 440px; height: 440px;
+  cursor: grab;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 8px 32px rgba(58,50,44,0.08));
+}
+
+.wheel.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.wheel:active { cursor: grabbing; }
+
+.wheel-svg {
+  width: 100%; height: 100%;
+}
+
+/* Sector hover */
+.wheel-sector {
+  transition: fill 0.3s ease, opacity 0.3s ease;
+}
+
+.wheel-sector:hover {
+  opacity: 0.85;
+}
+
+.wheel-sector.selected {
+  filter: brightness(1.15) saturate(1.3);
+}
+
+/* Icon animation */
+.wheel-icon {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Selection indicator at top */
+.wheel-indicator {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 10;
+}
+
+.indicator-arrow {
+  font-size: 16px;
+  color: #D4845A;
+  animation: arrowBounce 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(212,132,90,0.3));
+}
+
+@keyframes arrowBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+.indicator-label {
+  margin-top: 2px;
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: rgba(212,132,90,0.1);
+  font-size: 12px;
+  color: #6B5540;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Floating particles */
+.wheel-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: particleFloat 4s ease-in-out infinite;
+  animation-delay: var(--delay);
+  transform: rotate(var(--angle)) translateY(calc(var(--dist) * -1));
+}
+
+@keyframes particleFloat {
+  0%, 100% { opacity: 0; transform: rotate(var(--angle)) translateY(calc(var(--dist) * -1)) scale(0.5); }
+  20% { opacity: 1; }
+  50% { opacity: 0.4; transform: rotate(var(--angle)) translateY(calc(var(--dist) * -1.3)) scale(1.2); }
+  80% { opacity: 0.1; }
+}
