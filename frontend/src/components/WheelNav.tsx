@@ -9,20 +9,20 @@ interface Sector {
 
 const sectors: Sector[] = [
   { key: 'profile', label: '我的画像', sub: 'AI构建学习画像', path: '/profile',
-    icon: '?', color: '#D4845A', bg: 'rgba(212,132,90,0.12)' },
+    icon: '?', color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
   { key: 'generate', label: '资源生成', sub: '多智能体协同创作', path: '/generate',
-    icon: '?', color: '#E8A840', bg: 'rgba(232,168,64,0.12)' },
+    icon: '?', color: '#C88A2E', bg: 'rgba(200,138,46,0.08)' },
   { key: 'path', label: '学习路径', sub: '个性化路线规划', path: '/path',
-    icon: '?', color: '#5B8C7B', bg: 'rgba(91,140,123,0.12)' },
+    icon: '?', color: '#4A7C6B', bg: 'rgba(74,124,107,0.08)' },
   { key: 'resources', label: '资源库', sub: '学习资料中心', path: '/resources',
-    icon: '?', color: '#6B7DB3', bg: 'rgba(107,125,179,0.12)' },
+    icon: '?', color: '#5B7ABF', bg: 'rgba(91,122,191,0.08)' },
   { key: 'tutor', label: '智能辅导', sub: 'AI一对一答疑', path: '/tutor',
-    icon: '?', color: '#8E6EB4', bg: 'rgba(142,110,180,0.12)' },
+    icon: '?', color: '#7C6DB8', bg: 'rgba(124,109,184,0.08)' },
   { key: 'report', label: '学习报告', sub: '数据驱动成长', path: '/report',
-    icon: '?', color: '#4A8FB5', bg: 'rgba(74,143,181,0.12)' },
+    icon: '?', color: '#4A90A0', bg: 'rgba(74,144,160,0.08)' },
 ]
 
-const RADIUS = 200
+const RADIUS = 208
 const CENTER = 220
 const SECTOR_ANGLE = 360 / sectors.length
 
@@ -30,22 +30,22 @@ export default function WheelNav() {
   const [rotation, setRotation] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, rot: 0 })
-  const [activeSector, setActiveSector] = useState<number | null>(null)
+  const [hoveredSector, setHoveredSector] = useState<number | null>(null)
+  const [isClicking, setIsClicking] = useState(false)
   const wheelRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const dragMoved = useRef(false)
 
-  // Auto-rotate animation on idle
+  // Slow auto-rotation when idle
   useEffect(() => {
     if (isDragging) return
-    const timer = setInterval(() => {
-      setRotation((r) => r + 0.15)
-    }, 50)
+    const timer = setInterval(() => setRotation((r) => r + 0.12), 50)
     return () => clearInterval(timer)
   }, [isDragging])
 
-  // Mouse drag handlers
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     setIsDragging(true)
+    dragMoved.current = false
     setDragStart({ x: e.clientX, y: e.clientY, rot: rotation })
     e.currentTarget.setPointerCapture(e.pointerId)
   }, [rotation])
@@ -54,31 +54,28 @@ export default function WheelNav() {
     if (!isDragging) return
     const dx = e.clientX - dragStart.x
     const dy = e.clientY - dragStart.y
-    const delta = (dx - dy) * 0.3
-    setRotation(dragStart.rot + delta)
+    if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved.current = true
+    setRotation(dragStart.rot + (dx - dy) * 0.35)
   }, [isDragging, dragStart])
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false)
   }, [])
 
-  // Click to snap to nearest sector
   const handleClick = useCallback(() => {
-    if (isDragging) return
-    // Find which sector is closest to the top center position
+    if (dragMoved.current) return
+    // Snap to nearest sector
     const normalizedRot = ((rotation % 360) + 360) % 360
     const sectorIndex = Math.round(normalizedRot / SECTOR_ANGLE) % sectors.length
-    // Snap rotation to align that sector at top
     const targetRot = rotation - (normalizedRot - sectorIndex * SECTOR_ANGLE)
     setRotation(targetRot)
-    // Navigate after a brief pause
-    setTimeout(() => navigate(sectors[sectorIndex].path), 400)
-  }, [rotation, isDragging, navigate])
+    setIsClicking(true)
+    setTimeout(() => {
+      setIsClicking(false)
+      navigate(sectors[sectorIndex].path)
+    }, 350)
+  }, [rotation, navigate])
 
-  // Calculate which sector is at the top (selection indicator)
-  const selectedIndex = Math.round((((rotation % 360) + 360) % 360) / SECTOR_ANGLE) % sectors.length
-
-  // Generate SVG arc paths for each sector
   const sectorPaths = sectors.map((_, i) => {
     const startAngle = (i * SECTOR_ANGLE - 90) * Math.PI / 180
     const endAngle = ((i + 1) * SECTOR_ANGLE - 90) * Math.PI / 180
@@ -86,26 +83,30 @@ export default function WheelNav() {
     const y1 = CENTER + RADIUS * Math.sin(startAngle)
     const x2 = CENTER + RADIUS * Math.cos(endAngle)
     const y2 = CENTER + RADIUS * Math.sin(endAngle)
-    const largeArc = SECTOR_ANGLE > 180 ? 1 : 0
-    return `M ${CENTER} ${CENTER} L ${x1} ${y1} A ${RADIUS} ${RADIUS} 0 ${largeArc} 1 ${x2} ${y2} Z`
+    return `M ${CENTER} ${CENTER} L ${x1} ${y1} A ${RADIUS} ${RADIUS} 0 0 1 ${x2} ${y2} Z`
   })
+
+  const selectedIndex = Math.round((((rotation % 360) + 360) % 360) / SECTOR_ANGLE) % sectors.length
 
   return (
     <div className="wheel-container">
-      {/* Outer ring glow */}
       <div className="wheel-glow" />
-
-      {/* Decorative rings */}
       <svg className="wheel-rings" viewBox={`0 0 ${CENTER * 2} ${CENTER * 2}`}>
-        <circle cx={CENTER} cy={CENTER} r={RADIUS + 30} fill="none" stroke="rgba(212,132,90,0.06)" strokeWidth="1" />
-        <circle cx={CENTER} cy={CENTER} r={RADIUS + 15} fill="none" stroke="rgba(212,132,90,0.08)" strokeWidth="1" strokeDasharray="8 8" />
-        <circle cx={CENTER} cy={CENTER} r={RADIUS - 45} fill="none" stroke="rgba(212,132,90,0.06)" strokeWidth="1" />
+        <defs>
+          <radialGradient id="wheelBgGrad">
+            <stop offset="0%" stopColor="rgba(250,248,245,0)" />
+            <stop offset="85%" stopColor="rgba(250,248,245,0.5)" />
+            <stop offset="100%" stopColor="rgba(235,228,218,0.4)" />
+          </radialGradient>
+        </defs>
+        <circle cx={CENTER} cy={CENTER} r={RADIUS + 28} fill="none" stroke="rgba(0,0,0,0.03)" strokeWidth="1" />
+        <circle cx={CENTER} cy={CENTER} r={RADIUS + 14} fill="none" stroke="rgba(0,0,0,0.04)" strokeWidth="1" strokeDasharray="6 10" />
+        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="url(#wheelBgGrad)" />
       </svg>
 
-      {/* Main wheel */}
       <div
         ref={wheelRef}
-        className={`wheel${isDragging ? ' dragging' : ''}`}
+        className={`wheel${isDragging ? ' dragging' : ''}${isClicking ? ' clicking' : ''}`}
         style={{ transform: `rotate(${rotation}deg)` }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -113,73 +114,73 @@ export default function WheelNav() {
         onClick={handleClick}
       >
         <svg viewBox={`0 0 ${CENTER * 2} ${CENTER * 2}`} className="wheel-svg">
-          {/* Sectors */}
           {sectors.map((s, i) => (
-            <g key={s.key}>
+            <g key={s.key}
+              onPointerEnter={() => setHoveredSector(i)}
+              onPointerLeave={() => setHoveredSector(null)}
+            >
               <path
                 d={sectorPaths[i]}
-                fill={s.bg}
-                stroke="rgba(255,255,255,0.6)"
-                strokeWidth="1.5"
-                className={`wheel-sector${i === selectedIndex ? ' selected' : ''}`}
+                fill={i === selectedIndex ? s.bg.replace('0.08', '0.14') : s.bg}
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth={i === hoveredSector ? 1.8 : 1}
+                className={`wheel-sector${i === selectedIndex ? ' selected' : ''}${i === hoveredSector ? ' hovered' : ''}`}
+                style={{
+                  transform: i === hoveredSector ? 'scale(1.015)' : 'scale(1)',
+                  transformOrigin: `${CENTER}px ${CENTER}px`,
+                  transition: 'all 0.2s ease',
+                }}
               />
-              {/* Icon */}
               <text
-                x={CENTER + (RADIUS - 55) * Math.cos((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
-                y={CENTER + (RADIUS - 55) * Math.sin((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize="28"
-                className="wheel-icon"
+                x={CENTER + (RADIUS - 70) * Math.cos((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
+                y={CENTER + (RADIUS - 70) * Math.sin((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize="26" className="wheel-icon"
               >{s.icon}</text>
-              {/* Label */}
               <text
-                x={CENTER + (RADIUS - 20) * Math.cos((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
-                y={CENTER + (RADIUS - 20) * Math.sin((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize="11"
-                fontWeight="600"
-                fill="#4A3F35"
+                x={CENTER + (RADIUS - 22) * Math.cos((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
+                y={CENTER + (RADIUS - 22) * Math.sin((i * SECTOR_ANGLE + SECTOR_ANGLE / 2 - 90) * Math.PI / 180)}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize="10.5" fontWeight="600" fill="#4A3A28"
                 className="wheel-label"
               >{s.label}</text>
             </g>
           ))}
-          {/* Center circle */}
-          <circle cx={CENTER} cy={CENTER} r={42} fill="#FFFAF5" stroke="#E5DDD0" strokeWidth="1" />
-          <circle cx={CENTER} cy={CENTER} r={36} fill="url(#centerGrad)" />
+          {/* Center hub */}
+          <circle cx={CENTER} cy={CENTER} r={44} fill="#FFFBF7" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+          <circle cx={CENTER} cy={CENTER} r={38} fill="url(#hubGrad)" />
           <defs>
-            <radialGradient id="centerGrad">
-              <stop offset="0%" stopColor="#D4845A" />
-              <stop offset="100%" stopColor="#C0603A" />
+            <radialGradient id="hubGrad" cx="40%" cy="35%">
+              <stop offset="0%" stopColor="#F59E0B" />
+              <stop offset="100%" stopColor="#B45309" />
             </radialGradient>
           </defs>
-          <text x={CENTER} y={CENTER - 5} textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff">学境</text>
-          <text x={CENTER} y={CENTER + 11} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.8)">转动探索</text>
+          <text x={CENTER} y={CENTER - 4} textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff" fontFamily="var(--font-display)">学境</text>
+          <text x={CENTER} y={CENTER + 12} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.75)">转动探索</text>
         </svg>
       </div>
 
-      {/* Selection indicator (top) */}
-      <div className="wheel-indicator">
-        <div className="indicator-arrow">▼</div>
-        <div className="indicator-label">
-          {sectors[selectedIndex].label} — 点击进入
+      {/* Hover tooltip */}
+      {hoveredSector !== null && (
+        <div className="wheel-tooltip">
+          <div className="tooltip-name">{sectors[hoveredSector].label}</div>
+          <div className="tooltip-sub">{sectors[hoveredSector].sub}</div>
         </div>
+      )}
+
+      {/* Top indicator — discreet */}
+      <div className="wheel-indicator">
+        <div className="indicator-arrow">▲</div>
       </div>
 
-      {/* Floating particles */}
       <div className="wheel-particles">
         {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="particle"
-            style={{
-              '--angle': `${i * 30}deg`,
-              '--delay': `${i * 0.3}s`,
-              '--dist': `${140 + Math.random() * 40}px`,
-              background: sectors[i % sectors.length].color,
-            } as React.CSSProperties}
-          />
+          <div key={i} className="particle" style={{
+            '--angle': `${i * 30}deg`,
+            '--delay': `${i * 0.35 + Math.random() * 0.5}s`,
+            '--dist': `${140 + Math.random() * 30}px`,
+            background: sectors[i % sectors.length].color,
+          } as React.CSSProperties} />
         ))}
       </div>
     </div>

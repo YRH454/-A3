@@ -1,20 +1,31 @@
 .platform-shell {
   display: flex;
   height: 100vh;
-  background: #F9F6F0;
+  background: var(--bg-base);
   overflow: hidden;
 }
 
 /* ---- Sidebar ---- */
 .platform-sidebar {
   width: 230px;
-  background: linear-gradient(180deg, #3C342E 0%, #2C2520 100%);
+  background: linear-gradient(175deg, #2C1E14 0%, #1A1008 100%);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.25s ease;
-  box-shadow: 2px 0 24px rgba(0,0,0,0.15);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
   z-index: 20;
+}
+
+/* Subtle texture overlay */
+.platform-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(217,119,6,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(255,255,255,0.02) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .platform-sidebar.collapsed {
@@ -25,34 +36,42 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 18px 16px;
+  padding: 22px 18px 18px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+}
+
+.sidebar-brand::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 16px; right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
 }
 
 .sidebar-logo {
-  width: 36px; height: 36px;
+  width: 38px; height: 38px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #D4845A, #C0603A);
+  background: linear-gradient(135deg, #D97706, #B45309);
   display: flex; align-items: center; justify-content: center;
   font-size: 18px; color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 3px 12px rgba(212,132,90,0.3);
+  box-shadow: 0 0 16px rgba(217,119,6,0.25), 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .sidebar-name {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 20px; font-weight: 600; color: #FFFAF5;
-  letter-spacing: 1px;
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 600; color: #FAF8F5;
+  letter-spacing: 1.5px;
 }
 
 /* Nav items */
 .sidebar-nav {
   flex: 1;
-  padding: 12px 8px;
+  padding: 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   overflow-y: auto;
 }
 
@@ -64,28 +83,39 @@
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #B8A898;
+  color: #A89888;
   font-size: 13.5px;
+  font-weight: 400;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
   text-align: left;
-  font-family: inherit;
+  font-family: var(--font-body);
+  position: relative;
 }
 
 .sidebar-item:hover {
-  background: rgba(255,255,255,0.06);
-  color: #E5DDD0;
+  background: rgba(255,255,255,0.05);
+  color: #D4C8B8;
 }
 
 .sidebar-item.active {
-  background: rgba(212,132,90,0.15);
-  color: #D4845A;
-  font-weight: 600;
+  background: rgba(217,119,6,0.12);
+  color: #F59E0B;
+  font-weight: 500;
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent-brand);
 }
 
 .sidebar-item.active .sidebar-icon {
-  color: #D4845A;
+  color: #F59E0B;
 }
 
 .sidebar-icon {
@@ -97,38 +127,26 @@
   flex-shrink: 0;
 }
 
-.sidebar-label {
-  white-space: nowrap;
-}
+.sidebar-label { white-space: nowrap; }
 
-.platform-sidebar.collapsed .sidebar-label {
-  display: none;
-}
+.platform-sidebar.collapsed .sidebar-label { display: none; }
+.platform-sidebar.collapsed .sidebar-item { justify-content: center; padding: 12px 0; }
+.platform-sidebar.collapsed .sidebar-nav { padding: 14px 6px; }
+.platform-sidebar.collapsed .sidebar-item.active::before { left: 2px; }
 
-.platform-sidebar.collapsed .sidebar-item {
-  justify-content: center;
-  padding: 12px 0;
-}
-
-.platform-sidebar.collapsed .sidebar-nav {
-  padding: 12px 4px;
-}
-
-/* Sidebar footer */
 .sidebar-footer {
-  padding: 8px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.collapse-btn {
-  opacity: 0.5;
-}
+.collapse-btn { opacity: 0.4; }
+.collapse-btn:hover { opacity: 0.7; }
 
 .logout-btn:hover {
-  color: #E8886A !important;
+  color: #FCA5A5 !important;
 }
 
 /* ---- Main Content Area ---- */
@@ -137,6 +155,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(217,119,6,0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 0% 100%, rgba(58,38,24,0.03) 0%, transparent 50%);
 }
-
-/* ---- Right Panel (not fixed, each page controls its own) ---- */

@@ -14,7 +14,7 @@ import './App.css'
 
 const theme = {
   token: {
-    colorPrimary: '#D4845A',
+    colorPrimary: '#D97706',
     colorBgContainer: '#FFFAF5',
     fontFamily: "'Source Sans 3', system-ui, sans-serif",
     borderRadius: 10,

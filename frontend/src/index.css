@@ -1,26 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-base: #F9F6F0;
-  --bg-card: #FFFAF5;
-  --bg-dark: #3A322C;
-  --bg-chat: #F5F0E6;
-  --text-primary: #2C231B;
-  --text-secondary: #8C7F72;
-  --text-muted: #B8ADA2;
-  --accent-warm: #D4845A;
-  --accent-deep: #A85D3D;
-  --accent-gold: #DEB040;
-  --accent-sage: #5B8C7B;
-  --accent-sage-bg: #E8F2EE;
-  --border: #E8E0D4;
-  --shadow-sm: 0 2px 8px rgba(58,50,44,0.05);
-  --shadow-md: 0 4px 20px rgba(58,50,44,0.08);
-  --shadow-lg: 0 12px 40px rgba(58,50,44,0.1);
+  --bg-base: #FAF8F5;
+  --bg-card: #FFFFFF;
+  --bg-dark: #2C1E14;
+  --bg-darker: #1A1008;
+  --bg-chat: #F5F1EC;
+  --bg-warm: #F7F3EE;
+  --text-primary: #1E1510;
+  --text-secondary: #7A6E64;
+  --text-muted: #A89888;
+  --accent-brand: #D97706;
+  --accent-brand-light: #F59E0B;
+  --accent-brand-bg: rgba(217,119,6,0.08);
+  --accent-brown: #3A2618;
+  --accent-sage: #4A7C6B;
+  --accent-sage-bg: rgba(74,124,107,0.08);
+  --accent-gold: #C88A2E;
+  --accent-blue: #5B7ABF;
+  --accent-purple: #7C6DB8;
+  --accent-teal: #4A90A0;
+  --border: #E8E2DA;
+  --border-light: #F0EBE5;
+  --shadow-xs: 0 1px 3px rgba(30,21,16,0.04);
+  --shadow-sm: 0 2px 8px rgba(30,21,16,0.05);
+  --shadow-md: 0 4px 16px rgba(30,21,16,0.07);
+  --shadow-lg: 0 8px 32px rgba(30,21,16,0.09);
+  --shadow-xl: 0 16px 48px rgba(30,21,16,0.12);
   --radius: 14px;
   --radius-sm: 10px;
+  --radius-lg: 20px;
   --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Backward compat aliases for existing components */
+  --accent-warm: var(--accent-brand);
+  --accent-deep: #B45309;
+  --accent-sage-bg: var(--accent-sage-bg);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

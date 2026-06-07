@@ -194,14 +194,35 @@
   color: #8C7F72;
 }
 
-/* ---- Dashboard Wheel ---- */
-.dash-header {
-  text-align: center;
-  margin-bottom: 8px;
+/* ---- Dashboard Premium ---- */
+.dash-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 40px 24px;
+  justify-content: center;
 }
 
-.dash-header .page-title {
-  margin-bottom: 4px;
+.dash-header {
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.dash-greeting {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  color: #1E1510;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.dash-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.2px;
 }
 
 .dash-wheel-area {
@@ -209,40 +230,51 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 8px 0;
 }
 
 .dash-stats {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 12px 32px;
-  margin-top: 8px;
-  background: rgba(255,250,245,0.8);
-  border: 1px solid #E8E0D4;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(58,50,44,0.03);
+  padding: 14px 36px;
+  margin-top: 4px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 14px;
+  box-shadow:
+    0 2px 12px rgba(30,21,16,0.04),
+    0 1px 3px rgba(30,21,16,0.02);
 }
 
 .dash-stat-item {
   text-align: center;
-  padding: 4px 20px;
+  padding: 6px 22px;
+  transition: transform 0.2s ease;
+}
+
+.dash-stat-item:hover {
+  transform: translateY(-1px);
 }
 
 .dash-stat-num {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
+  color: #D97706;
+  letter-spacing: -0.5px;
 }
 
 .dash-stat-txt {
   font-size: 11px;
-  color: #8C7F72;
-  margin-top: 2px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  font-weight: 400;
 }
 
 .dash-stat-divider {
   width: 1px;
-  height: 28px;
-  background: #E8E0D4;
+  height: 32px;
+  background: rgba(0,0,0,0.06);
 }
