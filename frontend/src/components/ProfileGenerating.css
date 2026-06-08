@@ -1,0 +1,143 @@
+.pg-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(250,248,245,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  animation: pgFadeIn 0.3s ease-out;
+}
+
+@keyframes pgFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pg-card {
+  text-align: center;
+  position: relative;
+  animation: pgCardIn 0.5s ease-out;
+}
+
+@keyframes pgCardIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Core animation ring */
+.pg-core {
+  position: relative;
+  width: 100px; height: 100px;
+  margin: 0 auto 24px;
+}
+
+.pg-core-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(217,119,6,0.15);
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+.pg-core-ring.ring2 {
+  inset: -12px;
+  border-color: rgba(217,119,6,0.08);
+  animation-delay: 0.3s;
+}
+
+.pg-core-ring.ring3 {
+  inset: -24px;
+  border-color: rgba(217,119,6,0.04);
+  animation-delay: 0.6s;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.pg-core-inner {
+  position: absolute; inset: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(217,119,6,0.1), rgba(245,158,11,0.15));
+  display: flex; align-items: center; justify-content: center;
+  animation: coreSpin 4s linear infinite;
+}
+
+@keyframes coreSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pg-core-icon {
+  font-size: 28px;
+  animation: iconFloat 2s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Text */
+.pg-stage-text {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: #1E1510;
+  margin-bottom: 4px;
+  animation: textFade 0.5s ease;
+}
+
+.pg-sub-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* Progress dots */
+.pg-progress {
+  display: flex; gap: 8px; justify-content: center;
+}
+
+.pg-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.pg-dot.active {
+  background: #D97706;
+  box-shadow: 0 0 8px rgba(217,119,6,0.4);
+  transform: scale(1.4);
+}
+
+.pg-dot.done {
+  background: rgba(217,119,6,0.3);
+}
+
+/* Sparks */
+.pg-sparks {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 0; height: 0;
+}
+
+.pg-spark {
+  position: absolute;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #D97706;
+  animation: sparkFly 2s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.2s);
+}
+
+@keyframes sparkFly {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(-40px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-120px) scale(0);
+  }
+}

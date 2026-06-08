@@ -8,6 +8,7 @@ export interface User {
   token?: string
   session_id?: number
   remaining?: number
+  avatar_url?: string
 }
 
 interface AuthState {

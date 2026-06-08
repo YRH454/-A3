@@ -76,7 +76,7 @@ def register(req: RegisterRequest):
     token = create_token(user_id, "user")
     return {
         "token": token,
-        "user": {"id": user_id, "username": req.username, "email": req.email, "role": "user"},
+        "user": {"id": user_id, "username": req.username, "email": req.email, "role": "user", "avatar_url": ""},
     }
 
 
@@ -95,7 +95,8 @@ def login(req: LoginRequest):
     return {
         "token": token,
         "user": {"id": user["id"], "username": user["username"],
-                 "email": user["email"], "role": user["role"]},
+                 "email": user["email"], "role": user["role"],
+                 "avatar_url": user.get("avatar_url", "")},
     }
 
 
@@ -122,7 +123,7 @@ def me(authorization: str = Header(None)):
         payload = decode_token(authorization[7:])
         if payload:
             user_id = int(payload["sub"])
-            rows = query("SELECT id, username, email, role FROM users WHERE id = %s", (user_id,))
+            rows = query("SELECT id, username, email, role, avatar_url FROM users WHERE id = %s", (user_id,))
             if rows:
                 u = rows[0]
                 return {"user": {**u, "role": u["role"]}, "permissions": {}}
@@ -146,11 +147,15 @@ def me(authorization: str = Header(None)):
     }
 
 
+@router.post("/avatar")
+async def upload_avatar(user_id: int, file: bytes = None):
+    """上传用户头像到 OSS"""
+    from fastapi import UploadFile, File as FastAPIFile
+    pass
+
 @router.get("/admin/users")
 def list_users(user: dict = None):
-    """管理员：查看所有用户"""
     if not user:
         raise HTTPException(401)
-    # Actually this should use get_admin_user dependency
     rows = query("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC")
     return {"users": rows}

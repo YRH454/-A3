@@ -145,6 +145,13 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
     }], temperature=0.6, max_tokens=1500)
 
     report = report_resp.choices[0].message.content.strip()
+    # Strip any JSON/code blocks that DeepSeek might still sneak in
+    import re
+    report = re.sub(r'```json\s*\{[\s\S]*?\}\s*```', '', report)
+    report = re.sub(r'```\s*\{[\s\S]*?\}\s*```', '', report)
+    report = re.sub(r'\n\{[^{]*"radar_scores"[\s\S]*?\n\}', '', report)
+    report = re.sub(r'\n\s*\n\s*\n', '\n\n', report)
+    report = report.strip()
 
     # Step 2: DeepSeek 提取评分数据
     scores_resp = chat_deepseek([{

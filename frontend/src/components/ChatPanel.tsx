@@ -3,6 +3,7 @@ import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
 import { startProfile, sendMessage } from '../services/api'
 import ProfileCard from './ProfileCard'
+import ProfileGenerating from './ProfileGenerating'
 
 export default function ChatPanel() {
   const {
@@ -13,6 +14,7 @@ export default function ChatPanel() {
   const user = useAuthStore((s) => s.user)!
   const [input, setInput] = useState('')
   const [hasStarted, setHasStarted] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -20,9 +22,9 @@ export default function ChatPanel() {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  useEffect(() => { scrollToBottom() }, [messages, scrollToBottom])
+  useEffect(() => { scrollToBottom() }, [messages, scrollToBottom, generating])
 
-  // Auto-start: AI kicks off with first question
+  // Auto-start
   useEffect(() => {
     if (hasStarted) return
     setHasStarted(true)
@@ -36,7 +38,7 @@ export default function ChatPanel() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [hasStarted, addMessage, setCurrentDim, setProfile, setFilled, setLoading])
+  }, [hasStarted])
 
   const handleSend = () => {
     const text = input.trim()
@@ -47,6 +49,12 @@ export default function ChatPanel() {
     setLoading(true)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
+    // If this is the last question (6/7 filled), show ritual waiting
+    const store = useChatStore.getState()
+    if (store.filled >= 6) {
+      setGenerating(true)
+    }
+
     sendMessage(user.id, text)
       .then((data) => {
         addMessage({ role: 'assistant', content: data.reply })
@@ -55,20 +63,21 @@ export default function ChatPanel() {
         if (data.current_dim) setCurrentDim(data.current_dim)
         else setCurrentDim(null)
         setFilled(data.filled || 0)
-        setDone(data.done || false)
+        if (data.done) {
+          setDone(true)
+          setTimeout(() => setGenerating(false), 1000)
+        }
         setLoading(false)
       })
-      .catch((err) => {
-        console.error(err)
+      .catch(() => {
         setLoading(false)
+        setGenerating(false)
+        addMessage({ role: 'assistant', content: '抱歉，网络似乎出了点问题，请重新发送你的回答。' })
       })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -79,26 +88,30 @@ export default function ChatPanel() {
   }
 
   const isEmpty = messages.length === 0
+  const userAvatar = user.avatar_url || undefined
 
   return (
-    <div className="chat-panel">
+    <div className="chat-panel" style={{ position: 'relative' }}>
+      {generating && <ProfileGenerating />}
+
       {isEmpty ? (
         <div className="chat-welcome">
           <div className="chat-welcome-icon">?</div>
           <h2>构建你的学习画像</h2>
-          <p>AI会从7个维度逐项了解你，请如实回答，帮你生成专属学习方案。</p>
-          {isLoading && (
-            <div className="typing-dots" style={{ marginTop: 16 }}>
-              <span /><span /><span />
-            </div>
-          )}
+          <p>AI会从7个维度逐项了解你，帮你生成专属学习方案。</p>
+          {isLoading && <div className="typing-dots" style={{ marginTop: 16 }}><span /><span /><span /></div>}
         </div>
       ) : (
         <div className="chat-messages">
           {done && <ProfileCard />}
           {messages.map((msg, i) => (
             <div key={i} className={`chat-msg ${msg.role}`}>
-              <div className="chat-msg-avatar">{msg.role === 'user' ? '你' : 'AI'}</div>
+              <div className="chat-msg-avatar">
+                {msg.role === 'user'
+                  ? (userAvatar ? <img src={userAvatar} alt="" className="avatar-img" /> : user.username[0])
+                  : <span className="ai-avatar-whale">?</span>
+                }
+              </div>
               <div className="chat-msg-bubble">
                 {msg.content.split('\n').map((line, j) => (
                   <p key={j}>{line || ' '}</p>
@@ -106,9 +119,9 @@ export default function ChatPanel() {
               </div>
             </div>
           ))}
-          {isLoading && !done && (
+          {isLoading && !generating && (
             <div className="chat-msg assistant">
-              <div className="chat-msg-avatar">AI</div>
+              <div className="chat-msg-avatar"><span className="ai-avatar-whale">?</span></div>
               <div className="chat-msg-bubble">
                 <div className="typing-dots"><span /><span /><span /></div>
               </div>
@@ -119,23 +132,12 @@ export default function ChatPanel() {
       )}
 
       <div className="chat-input-area">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={handleInput}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            done ? '画像构建完成！' :
-            isEmpty ? '等待AI提问...' : '输入你的回答...'
-          }
-          rows={1}
-          disabled={isLoading || done}
+        <textarea ref={textareaRef} value={input} onChange={handleInput} onKeyDown={handleKeyDown}
+          placeholder={done ? '画像构建完成！' : isEmpty ? '等待AI提问...' : '输入你的回答...'}
+          rows={1} disabled={isLoading || done || generating}
         />
-        <button
-          className="chat-send-btn"
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading || done}
-        >↑</button>
+        <button className="chat-send-btn" onClick={handleSend}
+          disabled={!input.trim() || isLoading || done || generating}>↑</button>
       </div>
     </div>
   )
