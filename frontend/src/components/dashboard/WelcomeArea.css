@@ -1,0 +1,41 @@
+.welcome-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.welcome-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-greeting {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: #1E1510;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.welcome-quote {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0;
+  font-style: italic;
+}
+
+.welcome-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.welcome-date {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

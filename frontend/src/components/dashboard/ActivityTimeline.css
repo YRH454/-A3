@@ -1,0 +1,89 @@
+.activity-panel {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.at-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.at-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e1510;
+  margin: 0;
+}
+
+.at-more {
+  font-size: 12px;
+  color: var(--accent-brand);
+  cursor: pointer;
+}
+
+.at-more:hover {
+  text-decoration: underline;
+}
+
+.at-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.at-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 0;
+  min-height: 36px;
+}
+
+.at-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.at-dot-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 10px;
+}
+
+.at-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.at-dot-active {
+  background: var(--accent-brand);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+}
+
+.at-line {
+  width: 2px;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.06);
+  min-height: 14px;
+}
+
+.at-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-top: 1px;
+}

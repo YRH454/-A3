@@ -1,0 +1,102 @@
+.daily-quests {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.dq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dq-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e1510;
+}
+
+.dq-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dq-list {
+  display: flex;
+  gap: 12px;
+}
+
+.dq-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: #f9f6f0;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.dq-card:hover {
+  border-color: #e0d5c5;
+  background: #fffbf7;
+}
+
+.dq-done {
+  background: rgba(74, 124, 107, 0.06);
+  border-color: rgba(74, 124, 107, 0.15);
+}
+
+.dq-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.dq-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dq-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e1510;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.dq-bar-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.dq-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-brand), var(--accent-brand-light));
+  transition: width 0.6s ease-out;
+}
+
+.dq-done .dq-bar-fill {
+  background: var(--accent-sage);
+}
+
+.dq-progress {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-brand);
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
+}
+
+.dq-done .dq-progress {
+  color: var(--accent-sage);
+}

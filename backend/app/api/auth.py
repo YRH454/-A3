@@ -68,10 +68,13 @@ def register(req: RegisterRequest):
         raise HTTPException(400, "用户名或邮箱已被注册")
 
     pw_hash = hash_password(req.password)
-    user_id = execute(
-        "INSERT INTO users (username, email, password_hash, role) VALUES (%s, %s, %s, 'user')",
-        (req.username, req.email, pw_hash)
+    # DuckDB 不支持 AUTO_INCREMENT，手动生成 ID
+    max_id = query("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM users")[0]["next_id"]
+    execute(
+        "INSERT INTO users (id, username, email, password_hash, role) VALUES (%s, %s, %s, %s, 'user')",
+        (max_id, req.username, req.email, pw_hash)
     )
+    user_id = max_id
 
     token = create_token(user_id, "user")
     return {
@@ -103,13 +106,14 @@ def login(req: LoginRequest):
 def guest_login():
     """游客模式：无需注册，生成临时会话"""
     token = generate_guest_token()
-    session_id = execute(
-        "INSERT INTO guest_sessions (session_token, remaining_questions) VALUES (%s, 3)",
-        (token,)
+    max_id = query("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM guest_sessions")[0]["next_id"]
+    execute(
+        "INSERT INTO guest_sessions (id, session_token, remaining_questions) VALUES (%s, %s, 3)",
+        (max_id, token)
     )
     return {
         "token": token,
-        "user": {"id": 0, "username": "游客", "role": "guest", "session_id": session_id},
+        "user": {"id": 0, "username": "游客", "role": "guest", "session_id": max_id},
         "notice": "游客模式可体验3个维度的画像构建，数据24小时后自动清除",
     }
 

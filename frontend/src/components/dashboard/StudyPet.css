@@ -1,0 +1,252 @@
+/* ====== 学习宠物容器 ====== */
+.study-pet-wrapper {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.study-pet-wrapper:active { transform: scale(0.95); }
+
+/* ====== 舞台 ====== */
+.pet-stage {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 背景光晕 */
+.pet-stage::before {
+  content: '';
+  position: absolute;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217,119,6,0.08) 0%, transparent 70%);
+  transition: all 0.5s ease;
+}
+.pet-stage:hover::before {
+  width: 78px; height: 78px;
+  background: radial-gradient(circle, rgba(217,119,6,0.14) 0%, transparent 70%);
+}
+
+/* ====== 宠物本体 ====== */
+.pet-body {
+  font-size: 52px;
+  line-height: 1;
+  position: relative;
+  z-index: 2;
+  transition: filter 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pet-emoji { display: block; }
+
+/* ---- 情绪动画 ---- */
+.pet-body.mood-idle    { animation: petBreathe 3.2s ease-in-out infinite; }
+.pet-body.mood-studying { animation: petSway 2.4s ease-in-out infinite; }
+.pet-body.mood-happy   { animation: petBounce 0.55s ease-in-out 3; }
+.pet-body.mood-sleepy  { animation: petDroop 4s ease-in-out infinite; }
+.pet-body.mood-shocked { animation: petShock 0.35s ease-out; }
+.pet-body.mood-dusty   { animation: petSadMope 3.5s ease-in-out infinite; filter: grayscale(0.35) brightness(0.88); }
+.pet-body.celebrating  { animation: petCelebrate 0.7s cubic-bezier(0.22,0.61,0.36,1) 2; }
+
+/* ====== 对话气泡 ====== */
+.pet-dialog {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FFFBF7;
+  border: 1px solid #E8E2DA;
+  border-radius: 12px;
+  padding: 7px 12px;
+  font-size: 11px; font-weight: 500;
+  color: #1E1510;
+  white-space: nowrap;
+  box-shadow: 0 3px 14px rgba(30,21,16,0.07);
+  z-index: 20;
+  animation: dialogSlideIn 0.28s ease-out;
+  pointer-events: none;
+}
+.pet-dialog::after {
+  content: '';
+  position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top: 5px solid #FFFBF7;
+}
+.pet-dialog.mood-happy   { border-color: #FDE68A; background: #FFFBEB; }
+.pet-dialog.mood-happy::after   { border-top-color: #FFFBEB; }
+.pet-dialog.mood-shocked { border-color: #FCA5A5; background: #FFF5F5; }
+.pet-dialog.mood-shocked::after { border-top-color: #FFF5F5; }
+.pet-dialog.mood-sleepy  { border-color: #DDD6FE; background: #F8F7FF; }
+.pet-dialog.mood-sleepy::after  { border-top-color: #F8F7FF; }
+.pet-dialog.mood-dusty   { border-color: #E5E0D8; background: #F5F2ED; color: #8C7F72; }
+.pet-dialog.mood-dusty::after   { border-top-color: #F5F2ED; }
+
+@keyframes dialogSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ====== Zzz ====== */
+.zzz {
+  position: absolute;
+  font-size: 12px; font-weight: 700;
+  color: #7C6DB8;
+  opacity: 0; pointer-events: none;
+}
+.zzz.z1 { top: -2px;  right: -6px;  animation: zzzDrift 2s ease-out infinite; }
+.zzz.z2 { top: -12px; right: -14px; animation: zzzDrift 2s ease-out 0.4s infinite; }
+.zzz.z3 { top: -22px; right: -10px; animation: zzzDrift 2s ease-out 0.8s infinite; }
+
+@keyframes zzzDrift {
+  0%   { opacity: 0; transform: translate(0,0) scale(0.5); }
+  25%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(8px,-24px) scale(1.3); }
+}
+
+/* ====== 道具 ====== */
+.pet-prop { position: absolute; z-index: 3; pointer-events: none; }
+
+.blackboard-prop { top: -8px; right: -28px; }
+.blackboard-inner {
+  background: #2d5a3d;
+  border: 3px solid #5c3d2e;
+  border-radius: 4px;
+  padding: 4px 7px;
+  font-size: 9px; font-family: 'Courier New', monospace;
+  color: #e0e0d0;
+  display: flex; flex-direction: column; gap: 1px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+  transform: rotate(-6deg);
+  animation: bbFloat 2.4s ease-in-out infinite;
+}
+@keyframes bbFloat {
+  0%,100% { transform: rotate(-6deg) translateY(0); }
+  50%     { transform: rotate(-4deg) translateY(-3px); }
+}
+
+.cap-prop {
+  top: -16px; left: 50%; transform: translateX(-50%);
+  font-size: 22px;
+  animation: capBob 2.2s ease-in-out infinite;
+}
+@keyframes capBob {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%     { transform: translateX(-50%) translateY(-4px); }
+}
+
+.bubbles-prop { top: -2px; right: -22px; display: flex; flex-direction: column; gap: 2px; }
+.letter-bubble {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #FFF; border: 1.5px solid #D97706;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; color: #D97706;
+  animation: bubbleBob 1.6s ease-in-out infinite;
+}
+.letter-bubble.l1 { animation-delay: 0s; }
+.letter-bubble.l2 { animation-delay: 0.35s; }
+.letter-bubble.l3 { animation-delay: 0.7s; }
+@keyframes bubbleBob {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-4px) scale(1.08); }
+}
+
+.beard-prop {
+  bottom: 6px; left: 50%; transform: translateX(-45%);
+  font-size: 18px; opacity: 0.75;
+  animation: beardWag 3.5s ease-in-out infinite;
+}
+@keyframes beardWag {
+  0%,100% { transform: translateX(-45%) rotate(0deg); }
+  30%     { transform: translateX(-43%) rotate(2deg); }
+  70%     { transform: translateX(-47%) rotate(-2deg); }
+}
+
+.clap-prop {
+  position: absolute; top: 45%; width: 100%;
+  display: flex; justify-content: space-between;
+  z-index: 1; pointer-events: none;
+}
+.clap-l, .clap-r {
+  font-size: 17px;
+  animation: clap 0.35s ease-in-out infinite alternate;
+}
+.clap-l { animation-delay: 0s; }
+.clap-r { animation-delay: 0.18s; }
+@keyframes clap {
+  0%   { transform: scale(1) rotate(-8deg); }
+  100% { transform: scale(1.4) rotate(8deg); }
+}
+
+.sparkles { position: absolute; inset: -16px; pointer-events: none; z-index: 5; }
+.sparkle { position: absolute; font-size: 14px; animation: starPop 1s ease-out infinite; }
+.sparkle.s1 { top: 2px;   left: 50%;   animation-delay: 0s; }
+.sparkle.s2 { top: 22%;   right: -2px;  animation-delay: 0.22s; }
+.sparkle.s3 { bottom: 10%; left: -2px;  animation-delay: 0.44s; }
+.sparkle.s4 { top: 42%;   left: -4px;  animation-delay: 0.66s; }
+@keyframes starPop {
+  0%   { opacity: 1; transform: scale(0) rotate(0deg); }
+  50%  { opacity: 0.8; transform: scale(1.6) rotate(90deg); }
+  100% { opacity: 0; transform: scale(0.4) rotate(180deg); }
+}
+
+/* ====== 阴影 ====== */
+.pet-shadow {
+  position: absolute;
+  bottom: 10px; left: 50%; transform: translateX(-50%);
+  width: 36px; height: 5px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+/* ====== 关键帧 ====== */
+@keyframes petBreathe {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-4px) scale(1.04); }
+}
+@keyframes petSway {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  30%     { transform: translateY(-2px) rotate(-2.5deg); }
+  70%     { transform: translateY(-2px) rotate(2.5deg); }
+}
+@keyframes petBounce {
+  0%,100% { transform: translateY(0); }
+  35%     { transform: translateY(-14px); }
+  55%     { transform: translateY(0); }
+  75%     { transform: translateY(-6px); }
+  90%     { transform: translateY(0); }
+}
+@keyframes petDroop {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(3px) scale(0.96); }
+}
+@keyframes petShock {
+  0%   { transform: translateY(0) scale(1); }
+  25%  { transform: translateY(-18px) scale(1.15); }
+  55%  { transform: translateY(-8px) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes petSadMope {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(2px); }
+}
+@keyframes petCelebrate {
+  0%   { transform: translateY(0) rotate(0deg); }
+  40%  { transform: translateY(-18px) rotate(180deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
+/* ====== 响应式 ====== */
+@media (max-width: 768px) {
+  .pet-body { font-size: 40px; }
+  .pet-stage { width: 72px; height: 72px; }
+  .blackboard-inner { font-size: 8px; padding: 3px 5px; }
+  .letter-bubble { width: 14px; height: 14px; font-size: 7px; }
+  .pet-dialog { font-size: 10px; padding: 6px 10px; }
+}
