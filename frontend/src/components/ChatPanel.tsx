@@ -5,7 +5,7 @@ import { startProfile, sendMessage } from '../services/api'
 import ProfileCard from './ProfileCard'
 import ProfileGenerating from './ProfileGenerating'
 
-export default function ChatPanel() {
+export default function ChatPanel({ sessionId, onSessionId }: { sessionId: number | null; onSessionId: (id: number) => void }) {
   const {
     messages, isLoading, done,
     addMessage, setProfile, setVisual, setCurrentDim,
@@ -13,7 +13,7 @@ export default function ChatPanel() {
   } = useChatStore()
   const user = useAuthStore((s) => s.user)!
   const [input, setInput] = useState('')
-  const [hasStarted, setHasStarted] = useState(false)
+  const [hasStartedWithId, setHasStartedWithId] = useState<number | null>(null)
   const [generating, setGenerating] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -24,21 +24,30 @@ export default function ChatPanel() {
 
   useEffect(() => { scrollToBottom() }, [messages, scrollToBottom, generating])
 
-  // Auto-start
+  // Auto-start / switch session
   useEffect(() => {
-    if (hasStarted) return
-    setHasStarted(true)
+    const key = sessionId ?? -1
+    if (hasStartedWithId === key) return
+    setHasStartedWithId(key)
     setLoading(true)
-    startProfile(user.id)
+    useChatStore.getState().reset()
+    startProfile(user.id, sessionId ?? undefined)
       .then((data) => {
-        addMessage({ role: 'assistant', content: data.reply })
+        if (data.session_id && !sessionId) onSessionId(data.session_id)
+        if (data.messages && Array.isArray(data.messages)) {
+          data.messages.forEach((m: any) => addMessage(m))
+        } else {
+          addMessage({ role: 'assistant', content: data.reply })
+        }
         if (data.current_dim) setCurrentDim(data.current_dim)
         if (data.profile) setProfile(data.profile)
+        if (data.visual) setVisual(data.visual)
         setFilled(data.filled || 0)
+        if (data.done) setDone(true)
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [hasStarted])
+  }, [sessionId])
 
   const handleSend = () => {
     const text = input.trim()
@@ -55,7 +64,7 @@ export default function ChatPanel() {
       setGenerating(true)
     }
 
-    sendMessage(user.id, text)
+    sendMessage(user.id, text, sessionId ?? undefined)
       .then((data) => {
         addMessage({ role: 'assistant', content: data.reply })
         if (data.profile) setProfile(data.profile)

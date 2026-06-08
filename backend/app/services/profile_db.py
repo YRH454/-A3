@@ -1,6 +1,6 @@
 """学生画像数据库操作"""
 import json
-from app.database import query, execute
+from app.database import query, execute, insert
 
 
 def get_profile(user_id: int) -> dict | None:
@@ -73,17 +73,35 @@ def _get_profile_dict(user_id: int) -> dict:
     return profile["profile"] if profile else {}
 
 
-def save_chat_session(user_id: int, messages: list, session_type: str = "profile_building"):
-    existing = get_chat_session(user_id, session_type)
+def save_chat_session(user_id: int, messages: list, session_type: str = "profile_building", session_id: int = None):
     msg_json = json.dumps(messages, ensure_ascii=False)
+    if session_id:
+        execute("UPDATE chat_sessions SET messages = %s, updated_at = NOW() WHERE id = %s", (msg_json, session_id))
+        return session_id
+    existing = get_chat_session(user_id, session_type)
     if existing:
-        execute(
-            "UPDATE chat_sessions SET messages = %s, updated_at = NOW() WHERE id = %s",
-            (msg_json, existing["id"])
-        )
+        execute("UPDATE chat_sessions SET messages = %s, updated_at = NOW() WHERE id = %s", (msg_json, existing["id"]))
         return existing["id"]
-    else:
-        return execute(
-            "INSERT INTO chat_sessions (user_id, session_type, messages) VALUES (%s, %s, %s)",
-            (user_id, session_type, msg_json)
-        )
+    return insert("chat_sessions", {"user_id": user_id, "session_type": session_type, "messages": msg_json})
+
+
+def get_profile_sessions(user_id: int) -> list:
+    rows = query(
+        "SELECT id, messages, created_at, updated_at, is_active FROM chat_sessions "
+        "WHERE user_id = %s AND session_type = 'profile_building' ORDER BY updated_at DESC",
+        (user_id,)
+    )
+    result = []
+    for r in rows:
+        msgs = json.loads(r["messages"]) if isinstance(r["messages"], str) else r["messages"]
+        preview = ""
+        for m in msgs:
+            if m["role"] == "assistant":
+                preview = m["content"][:40]
+                break
+        result.append({
+            "id": r["id"], "preview": preview or "新会话",
+            "message_count": len(msgs), "is_active": bool(r["is_active"]),
+            "created_at": str(r["created_at"]), "updated_at": str(r["updated_at"]),
+        })
+    return result
