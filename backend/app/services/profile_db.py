@@ -78,10 +78,7 @@ def save_chat_session(user_id: int, messages: list, session_type: str = "profile
     if session_id:
         execute("UPDATE chat_sessions SET messages = %s, updated_at = NOW() WHERE id = %s", (msg_json, session_id))
         return session_id
-    existing = get_chat_session(user_id, session_type)
-    if existing:
-        execute("UPDATE chat_sessions SET messages = %s, updated_at = NOW() WHERE id = %s", (msg_json, existing["id"]))
-        return existing["id"]
+    # 无session_id = 创建新会话
     return insert("chat_sessions", {"user_id": user_id, "session_type": session_type, "messages": msg_json})
 
 

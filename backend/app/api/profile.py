@@ -34,16 +34,21 @@ def new_session(user_id: int):
 
 @router.post("/start")
 def start_profile(user_id: int, session_id: int = None):
+    # 恢复指定会话
     if session_id:
         sess = get_chat_session_by_id(session_id)
         if sess and sess.get("messages") and len(sess["messages"]) > 0:
             profile = sess.get("profile", {})
-            filled = {k for k, v in profile.items() if v and v.strip()}
+            filled = {k for k, v in profile.items() if v and v.strip() and not k.startswith("__")}
             dim = get_next_dimension(filled)
             if dim:
                 last_ai = next((m["content"] for m in reversed(sess["messages"]) if m["role"] == "assistant"), sess["messages"][-1]["content"])
                 return {"reply": last_ai, "messages": sess["messages"], "session_id": session_id, "current_dim": {"key": dim["key"], "label": dim["label"]}, "profile": profile, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": False}
             return {"reply": sess["messages"][-1]["content"], "messages": sess["messages"], "session_id": session_id, "current_dim": None, "profile": profile, "filled": len(DIMENSIONS_ORDER), "total": len(DIMENSIONS_ORDER), "done": True}
+
+    # 不带session_id = 创建全新会话
+    from app.database import execute
+    execute("UPDATE chat_sessions SET is_active = FALSE WHERE user_id = %s AND session_type = 'profile_building' AND is_active = TRUE", (user_id,))
 
     dim = DIMENSIONS_ORDER[0]
     key, label, desc = dim

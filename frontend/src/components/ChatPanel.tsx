@@ -33,7 +33,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
     useChatStore.getState().reset()
     startProfile(user.id, sessionId ?? undefined)
       .then((data) => {
-        if (data.session_id && !sessionId) onSessionId(data.session_id)
+        if (data.session_id && !sessionId) { setHasStartedWithId(data.session_id); onSessionId(data.session_id) }
         if (data.messages && Array.isArray(data.messages)) {
           data.messages.forEach((m: any) => addMessage(m))
         } else {
