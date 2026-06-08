@@ -40,11 +40,20 @@ def execute(sql: str, params=None) -> int:
 
 
 def insert(table: str, data: dict) -> int:
-    """插入一行并返回新 ID"""
-    rows = query(f"SELECT COALESCE(MAX(id), 0) + 1 AS nid FROM {table}")
-    nid = rows[0]["nid"] if rows else 1
-    cols = ["id"] + list(data.keys())
-    vals = [nid] + list(data.values())
-    ph = ", ".join(["%s"] * len(cols))
-    execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({ph})", vals)
-    return nid
+    """插入一行并返回新 ID，单连接防竞态"""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(f"SELECT COALESCE(MAX(id), 0) + 1 AS nid FROM {table}")
+            nid = cursor.fetchone()["nid"] or 1
+            cols = ["id"] + list(data.keys())
+            vals = [nid] + list(data.values())
+            ph = ", ".join(["%s"] * len(cols))
+            cursor.execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({ph})", vals)
+            conn.commit()
+            return nid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
