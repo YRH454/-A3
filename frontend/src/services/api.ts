@@ -26,19 +26,31 @@ export async function guestLoginApi() {
 }
 
 // ---- Profile ----
-export async function startProfile(userId: number, token?: string) {
-  const headers: Record<string, string> = {}
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${BASE}/profile/start?user_id=${userId}`, { method: 'POST', headers })
+export async function startProfile(userId: number, sessionId?: number) {
+  let url = `${BASE}/profile/start?user_id=${userId}`
+  if (sessionId) url += `&session_id=${sessionId}`
+  const res = await fetch(url, { method: 'POST' })
   if (!res.ok) throw new Error(`Start error: ${res.status}`)
   return res.json()
 }
 
-export async function sendMessage(userId: number, message: string) {
+export async function sendMessage(userId: number, message: string, sessionId?: number) {
   const res = await fetch(`${BASE}/profile/chat`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, message }),
+    body: JSON.stringify({ user_id: userId, message, session_id: sessionId }),
   })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function getProfileSessions(userId: number) {
+  const res = await fetch(`${BASE}/profile/sessions?user_id=${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function newProfileSession(userId: number) {
+  const res = await fetch(`${BASE}/profile/sessions/new?user_id=${userId}`, { method: 'POST' })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -60,6 +72,67 @@ export function streamChat(
 
 export async function getProfile(userId: number) {
   const res = await fetch(`${BASE}/profile/${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+// ---- Resources (Multi-Agent Generation) ----
+
+export async function startResourceGeneration(userId: number, message: string, sessionId?: number) {
+  const res = await fetch(`${BASE}/resources/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, message, session_id: sessionId }),
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function generateResourcesSync(userId: number, message: string, sessionId?: number) {
+  const res = await fetch(`${BASE}/resources/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, message, session_id: sessionId }),
+  })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export function streamGenerate(
+  userId: number, sessionId: number | undefined,
+  onEvent: (data: any) => void, onDone: () => void, onError: (err: Error) => void,
+) {
+  let url = `${BASE}/resources/generate/stream?user_id=${userId}`
+  if (sessionId) url += `&session_id=${sessionId}`
+  const es = new EventSource(url)
+  es.onmessage = (e) => {
+    if (e.data === '[DONE]') { es.close(); onDone(); return }
+    try { onEvent(JSON.parse(e.data)) } catch { /* ignore */ }
+  }
+  es.onerror = () => { es.close(); onError(new Error('连接中断')) }
+  return () => es.close()
+}
+
+export async function getResourceSessions(userId: number) {
+  const res = await fetch(`${BASE}/resources/sessions?user_id=${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function newResourceSession(userId: number) {
+  const res = await fetch(`${BASE}/resources/sessions/new?user_id=${userId}`, { method: 'POST' })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function getResourcePackage(packageId: number) {
+  const res = await fetch(`${BASE}/resources/packages/${packageId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function listResourcePackages(userId: number) {
+  const res = await fetch(`${BASE}/resources/packages?user_id=${userId}`)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }

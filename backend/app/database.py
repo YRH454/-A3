@@ -37,3 +37,14 @@ def execute(sql: str, params=None) -> int:
         raise
     finally:
         conn.close()
+
+
+def insert(table: str, data: dict) -> int:
+    """插入一行并返回新 ID"""
+    rows = query(f"SELECT COALESCE(MAX(id), 0) + 1 AS nid FROM {table}")
+    nid = rows[0]["nid"] if rows else 1
+    cols = ["id"] + list(data.keys())
+    vals = [nid] + list(data.values())
+    ph = ", ".join(["%s"] * len(cols))
+    execute(f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({ph})", vals)
+    return nid
