@@ -15,7 +15,7 @@ export default function Generate() {
   const {
     messages, plan, results, agentStatuses,
     generating, done, activeTab,
-    addMessage, setPlan, setAgentStatus, initAgentStatuses, setResult,
+    addMessage, setPlan, setAgentStatus, initAgentStatuses, batchAgentDone,
     setGenerating, setDone, setPackageId, setActiveTab, reset,
   } = useResourcesStore()
 
@@ -100,7 +100,7 @@ export default function Generate() {
       agents.forEach((a: any) => { statuses[a.key] = 'pending' })
       initAgentStatuses(statuses)
 
-      streamGenerate(
+      streamCleanup.current = streamGenerate(
         user.id, sessionId ?? undefined,
         (event) => {
           switch (event.type) {
@@ -110,18 +110,14 @@ export default function Generate() {
               setAgentStatus(event.agent, 'running')
               break
             case 'agent_done':
-              setResult(event.agent, event.result)
-              setAgentStatus(event.agent, 'done')
-              if (!activeTab) setActiveTab(event.agent)
+              batchAgentDone(event.agent, event.result)
               break
             case 'agent_error':
               setAgentStatus(event.agent, 'error')
               break
             case 'all_done':
               if (event.package_id) setPackageId(event.package_id)
-              if (event.summary) {
-                addMessage({ role: 'assistant', content: event.summary })
-              }
+              if (event.summary) addMessage({ role: 'assistant', content: event.summary })
               setDone(true)
               setGenerating(false)
               setPhase('done')
@@ -130,7 +126,6 @@ export default function Generate() {
           }
         },
         () => {
-          // onDone
           setGenerating(false)
           setDone(true)
           setPhase('done')

@@ -55,6 +55,19 @@ def get_chat_session(user_id: int, session_type: str = "profile_building"):
     }
 
 
+def get_chat_session_by_id(session_id: int) -> dict | None:
+    rows = query("SELECT * FROM chat_sessions WHERE id = %s", (session_id,))
+    if not rows:
+        return None
+    row = rows[0]
+    return {
+        "id": row["id"], "user_id": row["user_id"],
+        "messages": json.loads(row["messages"]) if isinstance(row["messages"], str) else row["messages"],
+        "session_type": row["session_type"],
+        "is_active": row["is_active"],
+    }
+
+
 def _get_profile_dict(user_id: int) -> dict:
     profile = get_profile(user_id)
     return profile["profile"] if profile else {}

@@ -33,6 +33,7 @@ interface ResourceState {
   setAgentStatus: (key: string, status: 'pending' | 'running' | 'done' | 'error') => void
   initAgentStatuses: (statuses: AgentStatus) => void
   setResult: (key: string, result: AgentResult) => void
+  batchAgentDone: (key: string, result: AgentResult) => void
   setGenerating: (v: boolean) => void
   setDone: (v: boolean) => void
   setPackageId: (id: number) => void
@@ -57,6 +58,12 @@ export const useResourcesStore = create<ResourceState>((set) => ({
   initAgentStatuses: (statuses) => set({ agentStatuses: statuses }),
   setResult: (key, result) =>
     set((s) => ({ results: { ...s.results, [key]: result } })),
+  batchAgentDone: (key, result) =>
+    set((s) => ({
+      results: { ...s.results, [key]: result },
+      agentStatuses: { ...s.agentStatuses, [key]: 'done' as const },
+      activeTab: s.activeTab || key,
+    })),
   setGenerating: (generating) => set({ generating }),
   setDone: (done) => set({ done }),
   setPackageId: (packageId) => set({ packageId }),

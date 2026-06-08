@@ -334,12 +334,12 @@ AGENT_RUNNERS = {
 }
 
 
-def run_agents(plan: dict, progress_callback=None) -> dict:
-    """分批并行执行所有Agent，返回结果字典。
-
-    progress_callback(agent_key, status, result=None) 用于SSE推送
-    """
+def run_agents(plan: dict) -> dict:
+    """并行执行所有Agent，返回结果字典"""
     agents = plan.get("agents", [])
+    if not agents:
+        return {}
+
     results = {}
 
     def run_one(agent_cfg):
@@ -347,38 +347,18 @@ def run_agents(plan: dict, progress_callback=None) -> dict:
         runner = AGENT_RUNNERS.get(key)
         if not runner:
             return key, {"error": f"未知Agent: {key}"}
-
-        if progress_callback:
-            progress_callback(key, "start")
-
         try:
             result = runner(agent_cfg.get("params", {}))
             result["agent_label"] = agent_cfg.get("label", key)
-            if progress_callback:
-                progress_callback(key, "done", result)
             return key, result
         except Exception as e:
             logger.error(f"Agent {key} 失败: {e}")
-            error_result = {
-                "type": key,
-                "label": agent_cfg.get("label", key),
-                "error": str(e),
-            }
-            if progress_callback:
-                progress_callback(key, "error", error_result)
-            return key, error_result
+            return key, {"type": key, "label": agent_cfg.get("label", key), "error": str(e)}
 
-    # 分批并行：第1批(3个) + 第2批(剩余)
-    batch1 = [a for a in agents if a["key"] in ("course", "mindmap", "exercise")]
-    batch2 = [a for a in agents if a["key"] not in ("course", "mindmap", "exercise")]
-
-    for batch in (batch1, batch2):
-        if not batch:
-            continue
-        with ThreadPoolExecutor(max_workers=len(batch)) as executor:
-            futures = {executor.submit(run_one, cfg): cfg["key"] for cfg in batch}
-            for future in as_completed(futures):
-                key, result = future.result()
-                results[key] = result
+    with ThreadPoolExecutor(max_workers=len(agents)) as executor:
+        futures = {executor.submit(run_one, cfg): cfg["key"] for cfg in agents}
+        for future in as_completed(futures):
+            key, result = future.result()
+            results[key] = result
 
     return results

@@ -1,27 +1,24 @@
-import { useState } from 'react'
 import { AGENT_ICONS } from '../stores/resourcesStore'
 
+function renderMarkdown(content: string, opts?: { showH1?: boolean; showCode?: boolean; showBoldHeadings?: boolean }) {
+  return content.split('\n').map((line, i) => {
+    if (opts?.showBoldHeadings !== false && line.startsWith('**') && line.includes('**'))
+      return <h4 key={i}>{line.replace(/\*\*/g, '')}</h4>
+    if (line.startsWith('### ')) return <h3 key={i}>{line.slice(4)}</h3>
+    if (line.startsWith('## ')) return <h2 key={i}>{line.slice(3)}</h2>
+    if (opts?.showH1 !== false && line.startsWith('# ')) return <h1 key={i}>{line.slice(2)}</h1>
+    if (line.startsWith('- ')) return <li key={i}>{line.slice(2)}</li>
+    if (opts?.showCode !== false && line.startsWith('```')) return <code key={i} className="code-block">{line.slice(3, -3)}</code>
+    if (line.trim() === '') return <br key={i} />
+    return <p key={i}>{line}</p>
+  })
+}
+
 function CourseView({ content }: { content: string }) {
-  return (
-    <div className="resource-course">
-      {content.split('\n').map((line, i) => {
-        if (line.startsWith('### ')) return <h3 key={i}>{line.slice(4)}</h3>
-        if (line.startsWith('## ')) return <h2 key={i}>{line.slice(3)}</h2>
-        if (line.startsWith('# ')) return <h1 key={i}>{line.slice(2)}</h1>
-        if (line.startsWith('- ')) return <li key={i}>{line.slice(2)}</li>
-        if (line.startsWith('```')) return <code key={i} className="code-block">{line.slice(3, -3)}</code>
-        if (line.trim() === '') return <br key={i} />
-        return <p key={i}>{line}</p>
-      })}
-    </div>
-  )
+  return <div className="resource-course">{renderMarkdown(content, { showH1: true, showCode: true })}</div>
 }
 
 function MindMapView({ content }: { content: string }) {
-  const [svgCode, setSvgCode] = useState<string>('')
-  const [error, setError] = useState(false)
-
-  // Simple text-based tree view as fallback
   return (
     <div className="resource-mindmap">
       <div className="mindmap-mermaid">
@@ -106,20 +103,7 @@ function ExerciseView({ content }: { content: any }) {
 }
 
 function ReadingView({ content }: { content: string }) {
-  return (
-    <div className="resource-reading">
-      {content.split('\n').map((line, i) => {
-        if (line.startsWith('### ')) return <h3 key={i}>{line.slice(4)}</h3>
-        if (line.startsWith('## ')) return <h2 key={i}>{line.slice(3)}</h2>
-        if (line.startsWith('**') && line.includes('**')) {
-          return <h4 key={i}>{line.replace(/\*\*/g, '')}</h4>
-        }
-        if (line.startsWith('- ')) return <li key={i} className="reading-item">{line.slice(2)}</li>
-        if (line.trim() === '') return <br key={i} />
-        return <p key={i}>{line}</p>
-      })}
-    </div>
-  )
+  return <div className="resource-reading">{renderMarkdown(content, { showH1: false, showCode: false, showBoldHeadings: true })}</div>
 }
 
 function MediaView({ content }: { content: any }) {
@@ -130,12 +114,7 @@ function MediaView({ content }: { content: any }) {
     <div className="resource-media">
       <div className="media-script">
         <h3>📝 视频脚本</h3>
-        {script.split('\n').map((line: string, i: number) => {
-          if (line.startsWith('## ')) return <h4 key={i}>{line.slice(3)}</h4>
-          if (line.startsWith('- ')) return <li key={i}>{line.slice(2)}</li>
-          if (line.trim() === '') return <br key={i} />
-          return <p key={i}>{line}</p>
-        })}
+        {renderMarkdown(script, { showH1: false, showCode: false })}
       </div>
       {prompt && (
         <div className="media-prompt">
