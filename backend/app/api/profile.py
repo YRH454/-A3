@@ -61,7 +61,7 @@ def start_profile(user_id: int, session_id: int = None):
 class ChatRequest(BaseModel):
     user_id: int
     message: str
-    session_id: int = None
+    session_id: int | None = None
 
 
 @router.post("/chat")
@@ -135,6 +135,18 @@ def get_dimensions():
     return {"dimensions": {k: v for k, v in PROFILE_DIMENSIONS.items()}}
 
 
+# ─── Agent Stream ──────────────────────────────────────
+
+@router.post("/chat/agent")
+def profile_chat_agent_sync(req: ChatRequest):
+    """Agent Loop（同步版，调试用）"""
+    from app.services.agent_service import run_agent
+    events = []
+    result = run_agent(req.message, on_event=lambda e, d: events.append({"event": e, "data": d}))
+    return {"status": result["status"], "answer": result.get("answer", ""),
+            "rounds": result["rounds"], "events": events}
+
+
 # ─── Agent SSE Stream ───────────────────────────────────
 
 from fastapi.responses import StreamingResponse
@@ -147,6 +159,9 @@ async def profile_chat_agent(req: ChatRequest):
     from app.services.agent_service import run_agent
 
     async def generate():
+        # Send start immediately to prevent client timeout
+        yield f"data: {json.dumps({'event': 'start', 'data': {}})}\n\n"
+
         queue = asyncio.Queue()
         done = threading.Event()
 
@@ -168,14 +183,12 @@ async def profile_chat_agent(req: ChatRequest):
             finally:
                 done.set()
 
-        # Start agent in background thread
         t = threading.Thread(target=run_blocking, daemon=True)
         t.start()
 
-        # Stream events as they arrive
         while not done.is_set() or not queue.empty():
             try:
-                msg = await asyncio.wait_for(queue.get(), timeout=0.5)
+                msg = await asyncio.wait_for(queue.get(), timeout=0.3)
                 if msg["event"] == "__done__":
                     yield f"data: {json.dumps({'event': 'done', 'data': msg['data']}, ensure_ascii=False)}\n\n"
                     yield "data: [DONE]\n\n"
@@ -185,6 +198,8 @@ async def profile_chat_agent(req: ChatRequest):
                     return
                 yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
             except asyncio.TimeoutError:
+                # Send heartbeat to keep connection alive
+                yield ": heartbeat\n\n"
                 continue
 
     return StreamingResponse(
