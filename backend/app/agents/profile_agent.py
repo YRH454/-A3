@@ -128,8 +128,10 @@ def extract_dimension_answer(dim_key: str, dim_label: str,
 
 # ========== DeepSeek 生成文本报告 + 千问设计视觉 ==========
 
+import re as _re
+
 def generate_final_profile(profile: dict, conversation: list) -> dict:
-    """DeepSeek生成文本总结，千问设计可视化方案"""
+    """一次LLM调用同时生成文字报告 + ECharts雷达图配置（参考DeepDiagram的一次输出模式）"""
     conv_text = "\n".join(
         f"{'学生' if m['role'] == 'user' else 'AI'}：{m['content']}"
         for m in conversation
@@ -141,10 +143,10 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
         profile_lines.append(f"- {label}：{val}" if val else f"- {label}：待了解")
     profile_text = "\n".join(profile_lines)
 
-    # Step 1: DeepSeek 快速生成纯文本报告（不要JSON）
-    report_resp = chat_deepseek([{
+    # 一次调用：文字报告 + 评分 + 视觉元数据 + ECharts配置
+    resp = chat_deepseek([{
         "role": "system",
-        "content": f"""你是学习画像分析师。根据数据生成一份优雅的画像报告。
+        "content": f"""你是学习画像分析师+视觉设计师。请根据学生数据一次性生成完整画像报告。
 
 学生数据：
 {profile_text}
@@ -152,89 +154,78 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
 对话记录：
 {conv_text}
 
-请按以下结构输出纯文本报告：
+请严格按照以下格式输出（用 ===SECTION=== 分隔）：
 
----
+===REPORT===
+（纯文本报告，不要JSON，不要代码块）
 
-### ? 学习画像总览
-2-3句话概括学习特质，用第二人称"你"
+### 🌟 学习画像总览
+2-3句话概括学习特质，用第二人称
 
-### ? 多维分析
+### 🔍 多维分析
 每个维度1-2句分析
 
-### ? 个性化学习建议
-3条具体可执行的建议，编号列出
+### 📌 个性化学习建议
+3条具体可执行建议
 
-### ? 推荐学习资源类型
-适合你的3种资源形式
+### 🎯 推荐学习资源
+3种适合的资源形式
 
----
+===SCORES===
+（纯JSON对象，7个维度1-10分）
+{{"知识基础": 8, "学习风格": 7, "学习难点": 5, "兴趣方向": 9, "学习目标": 8, "学习节奏": 7, "交互偏好": 6}}
 
-要求：语气温暖专业，像一位了解你的导师。不要输出JSON、代码块或任何格式标记。"""
-    }], temperature=0.6, max_tokens=1500)
+===VISUAL===
+（纯JSON对象，用于前端可视化）
+{{
+    "card_title": "一句话标签（如：夜读型AI探索者）",
+    "atmosphere": "视觉氛围一句话",
+    "strengths": ["优势1", "优势2"],
+    "growth_areas": ["成长方向1", "成长方向2"],
+    "learning_quote": "适合的学习格言"
+}}
 
-    report = report_resp.choices[0].message.content.strip()
-    # Strip any JSON/code blocks that DeepSeek might still sneak in
-    import re
-    report = re.sub(r'```json\s*\{[\s\S]*?\}\s*```', '', report)
-    report = re.sub(r'```\s*\{[\s\S]*?\}\s*```', '', report)
-    report = re.sub(r'\n\{[^{]*"radar_scores"[\s\S]*?\n\}', '', report)
-    report = re.sub(r'\n\s*\n\s*\n', '\n\n', report)
-    report = report.strip()
+===RADAR===
+（纯JSON对象，7维度0-1的值，用于ECharts雷达图）
+{{
+    "indicator": [{{"name": "知识基础", "max": 1}}, ...共7个],
+    "value": [0.8, 0.7, 0.3, 0.9, 0.8, 0.7, 0.6]
+}}
 
-    # Step 2: DeepSeek 提取评分数据
-    scores_resp = chat_deepseek([{
-        "role": "system",
-        "content": f"""根据画像数据，给7个维度打分(1-10)，返回纯JSON：
+只按格式输出，不要额外解释。"""
+    }], temperature=0.6, max_tokens=2000)
 
-{profile_text}
+    full_text = resp.choices[0].message.content.strip()
 
-格式：{{"知识基础": 8, "学习风格": 7, "学习难点": 5, "兴趣方向": 9, "学习目标": 8, "学习节奏": 7, "交互偏好": 6}}
+    # 解析各SECTION
+    def _extract_section(text: str, tag: str) -> str:
+        m = _re.search(rf'==={tag}===\s*\n?(.*?)(?=\n===|\Z)', text, _re.DOTALL)
+        return m.group(1).strip() if m else ""
 
-只返回JSON对象，不要其他文字。"""
-    }], temperature=0.2, max_tokens=200, json_mode=True)
+    report = _extract_section(full_text, "REPORT")
+    report = _re.sub(r'```[^`]*```', '', report)  # 清理可能的代码块
+    report = _re.sub(r'\n\s*\n\s*\n', '\n\n', report).strip()
 
+    # 处理评分
     scores = {}
+    scores_text = _extract_section(full_text, "SCORES")
     try:
-        scores = json.loads(scores_resp.choices[0].message.content.strip())
+        scores = json.loads(scores_text)
     except Exception:
         for k, label, _ in DIMENSIONS_ORDER:
             val = profile.get(k, "")
             scores[label] = min(9, max(3, len(val) // 12 + 4)) if val else 3
 
-    # Step 3: 千问设计视觉方案（颜色、氛围、标签）
-    visual_resp = chat_qwen([{
-        "role": "system",
-        "content": f"""你是视觉设计师。根据学生画像设计一个可视化方案。
-
-画像数据：
-{profile_text}
-
-请设计：返回纯JSON（不要markdown标记）
-{{
-    "card_title": "一句话概括这个学生的标签（如：夜读型AI探索者）",
-    "atmosphere": "视觉氛围描述（如：深夜星空下的思考者）",
-    "color_gradient": ["#主色", "#辅色", "#点缀色"],
-    "strengths": ["优势1", "优势2"],
-    "growth_areas": ["成长方向1", "成长方向2"],
-    "learning_quote": "一句适合这位学生的学习格言"
-}}"""
-    }], temperature=0.8, max_tokens=600, json_mode=True)
-
+    # 处理视觉
     visual = {
         "radar_scores": scores,
-        "card_title": "",
-        "atmosphere": "",
-        "color_gradient": ["#D4845A", "#5B8C7B", "#DEB040"],
-        "strengths": [],
-        "growth_areas": [],
-        "learning_quote": "",
+        "card_title": "", "atmosphere": "",
+        "strengths": [], "growth_areas": [], "learning_quote": "",
     }
+    visual_text = _extract_section(full_text, "VISUAL")
     try:
-        vdata = json.loads(visual_resp.choices[0].message.content.strip())
-        visual.update(vdata)
+        visual.update(json.loads(visual_text))
     except Exception:
-        # Fallback: use data-driven defaults
         sorted_dims = sorted(
             [(label, int(scores.get(label, 5))) for _, label, _ in DIMENSIONS_ORDER],
             key=lambda x: x[1], reverse=True
@@ -242,5 +233,17 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
         visual["card_title"] = f"{sorted_dims[0][0]}型学习者"
         visual["strengths"] = [f"{sorted_dims[0][0]}突出", f"{sorted_dims[1][0]}良好"]
         visual["growth_areas"] = [f"{sorted_dims[-1][0]}可加强"]
+
+    # 处理雷达图数据
+    radar = {"indicator": [], "value": []}
+    radar_text = _extract_section(full_text, "RADAR")
+    try:
+        radar = json.loads(radar_text)
+    except Exception:
+        # 用 scores 兜底
+        for _, label, _ in DIMENSIONS_ORDER:
+            radar["indicator"].append({"name": label, "max": 1})
+            radar["value"].append(scores.get(label, 5) / 10)
+    visual["radar_data"] = radar
 
     return {"report": report, "visual": visual, "profile": profile}

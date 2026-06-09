@@ -576,3 +576,37 @@
   display: flex; justify-content: space-between;
   font-size: 11px; color: var(--text-muted);
 }
+
+/* ---- Profile Report ---- */
+.profile-report {
+  margin: 20px 0;
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  border: 1px solid #eee;
+}
+.pr-header { text-align: center; margin-bottom: 20px; }
+.pr-header h2 { font-size: 20px; margin: 0 0 8px; }
+.pr-badge {
+  display: inline-block; padding: 6px 20px; border-radius: 20px;
+  background: linear-gradient(135deg, #D4845A, #C87040);
+  color: #fff; font-size: 14px; font-weight: 600;
+}
+.pr-atmo { font-size: 13px; color: #888; font-style: italic; margin-top: 6px; }
+.pr-body { display: flex; gap: 24px; flex-wrap: wrap; }
+.pr-chart-section { flex: 1; min-width: 300px; }
+.pr-chart-section h3, .pr-detail-section h3 { font-size: 14px; margin: 0 0 12px; color: #555; }
+.pr-detail-section { width: 280px; }
+.pr-dim-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pr-dim-label { width: 64px; font-size: 12px; color: #666; text-align: right; flex-shrink: 0; }
+.pr-dim-bar-track { flex: 1; height: 8px; background: #f0ede0; border-radius: 4px; overflow: hidden; }
+.pr-dim-bar-fill { height: 100%; background: linear-gradient(90deg, #D4845A, #5B8C7B); border-radius: 4px; transition: width 0.8s ease; }
+.pr-dim-score { width: 32px; font-size: 12px; font-weight: 600; color: #D4845A; text-align: center; }
+.pr-insights { display: flex; gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; }
+.pr-insight-col { flex: 1; }
+.pr-insight-col h4 { font-size: 13px; margin: 0 0 8px; }
+.pr-chip { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin: 2px 4px; }
+.pr-chip.str { background: rgba(91,140,123,0.1); color: #4A7C6B; }
+.pr-chip.grow { background: rgba(212,132,90,0.1); color: #B06030; border: 1px solid rgba(212,132,90,0.2); }
+.pr-quote { margin-top: 16px; padding: 12px 16px; background: rgba(0,0,0,0.02); border-left: 3px solid #DEB040; font-style: italic; color: #666; font-size: 13px; border-radius: 0 8px 8px 0; }

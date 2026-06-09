@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
 import { startProfile, sendMessage } from '../services/api'
-import ProfileCard from './ProfileCard'
+import ProfileReport from './ProfileReport'
 import ProfileGenerating from './ProfileGenerating'
 
 export default function ChatPanel({ sessionId, onSessionId }: { sessionId: number | null; onSessionId: (id: number) => void }) {
@@ -111,7 +111,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
         </div>
       ) : (
         <div className="chat-messages">
-          {done && <ProfileCard />}
+          {done && <ProfileReport />}
           {messages.map((msg, i) => (
             <div key={i} className={`chat-msg ${msg.role}`}>
               <div className="chat-msg-avatar">
