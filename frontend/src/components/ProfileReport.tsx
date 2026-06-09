@@ -98,6 +98,54 @@ export default function ProfileReport() {
       {learning_quote && (
         <div className="pr-quote">"{learning_quote}"</div>
       )}
+
+      {/* Learning Resources */}
+      {visual.resources?.length > 0 && (
+        <div className="pr-resources">
+          <h3>📚 推荐学习资源</h3>
+          <div className="pr-resource-grid">
+            {visual.resources.map((r: any, i: number) => (
+              <div key={i} className="pr-resource-card">
+                <div className="pr-res-type">{r.type}</div>
+                <div className="pr-res-title">{r.title}</div>
+                <div className="pr-res-why">{r.why}</div>
+                <div className="pr-res-diff">{r.difficulty}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Learning Roadmap */}
+      {visual.roadmap?.length > 0 && (
+        <div className="pr-roadmap">
+          <h3>🗺️ 学习路线建议</h3>
+          <div className="pr-roadmap-steps">
+            {visual.roadmap.map((s: any, i: number) => (
+              <div key={i} className="pr-step">
+                <div className="pr-step-num">{s.step || i + 1}</div>
+                <div className="pr-step-content">
+                  <div className="pr-step-title">{s.title}</div>
+                  <div className="pr-step-meta">{s.duration} · {s.focus}</div>
+                  <div className="pr-step-mile">🎯 {s.milestone}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Skill Tags */}
+      {visual.tags?.length > 0 && (
+        <div className="pr-tags-section">
+          <h3>🏷️ 学习者标签</h3>
+          <div className="pr-tags-cloud">
+            {visual.tags.map((t: string, i: number) => (
+              <span key={i} className="pr-tag">{t}</span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

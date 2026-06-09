@@ -192,6 +192,22 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
     "value": [0.8, 0.7, 0.3, 0.9, 0.8, 0.7, 0.6]
 }}
 
+===RESOURCES===
+（纯JSON数组，推荐5个具体学习资源）
+[
+    {{"title": "资源名称", "type": "课程/书籍/视频/工具/社区", "url": "搜索关键词或链接", "why": "1句话推荐理由", "difficulty": "入门/中级/高级"}}
+]
+
+===ROADMAP===
+（纯JSON数组，3-5步学习路线）
+[
+    {{"step": 1, "title": "阶段名称", "duration": "建议时长", "focus": "本阶段重点", "milestone": "阶段成果"}}
+]
+
+===TAGS===
+（纯JSON数组，5-8个标签词概括这个学习者）
+["标签1", "标签2", "标签3", ...]
+
 只按格式输出，不要额外解释。"""
     }], temperature=0.6, max_tokens=2000)
 
@@ -245,5 +261,26 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
             radar["indicator"].append({"name": label, "max": 1})
             radar["value"].append(scores.get(label, 5) / 10)
     visual["radar_data"] = radar
+
+    # 学习资源
+    resources_text = _extract_section(full_text, "RESOURCES")
+    try:
+        visual["resources"] = json.loads(resources_text)
+    except Exception:
+        visual["resources"] = []
+
+    # 学习路线
+    roadmap_text = _extract_section(full_text, "ROADMAP")
+    try:
+        visual["roadmap"] = json.loads(roadmap_text)
+    except Exception:
+        visual["roadmap"] = []
+
+    # 标签
+    tags_text = _extract_section(full_text, "TAGS")
+    try:
+        visual["tags"] = json.loads(tags_text)
+    except Exception:
+        visual["tags"] = []
 
     return {"report": report, "visual": visual, "profile": profile}
