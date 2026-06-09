@@ -96,7 +96,8 @@ def profile_chat(req: ChatRequest):
         save_profile(req.user_id, full["profile"])
         return {"reply": full["report"], "profile": full["profile"], "visual": full.get("visual"), "current_dim": None, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": True}
 
-    question = ask_dimension_question(next_dim["key"], next_dim["label"], next_dim["desc"], messages, profile)
+    question = ask_dimension_question(next_dim["key"], next_dim["label"], next_dim["desc"],
+        messages, profile, prev_label=dim["label"], prev_answer=req.message)
     messages.append({"role": "assistant", "content": question})
     save_chat_session(req.user_id, messages, session_id=sid)
     save_profile(req.user_id, profile)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Session Test</title></head><body>
+<h2>会话管理测试</h2>
+<div>
+  <button onclick="doStart()">1. 创建会话</button>
+  <button onclick="doNewSession()">2. 新会话</button>
+  <button onclick="doList()">3. 列出会话</button>
+  <button onclick="doResume()">4. 恢复旧会话</button>
+</div>
+<pre id="log" style="background:#f5f5f5;padding:10px;max-height:400px;overflow:auto"></pre>
+<script>
+const BASE = 'http://localhost:8001/api/v1/profile';
+let currentSid = null;
+let sessions = [];
+const log = (msg) => document.getElementById('log').textContent += msg + '\n';
+
+async function doStart() {
+  log('--- 创建会话 ---');
+  const r = await fetch(BASE + '/start?user_id=0', {method:'POST'});
+  const d = await r.json();
+  currentSid = d.session_id;
+  log('session_id=' + currentSid + ', msgs=' + (d.messages?.length||0));
+  log('reply: ' + (d.reply||'').substring(0,60));
+}
+
+async function doNewSession() {
+  log('--- 新会话 ---');
+  await fetch(BASE + '/sessions/new?user_id=0', {method:'POST'});
+  const r = await fetch(BASE + '/start?user_id=0', {method:'POST'});
+  const d = await r.json();
+  currentSid = d.session_id;
+  log('新 session_id=' + currentSid);
+  log('旧会话是否还在列表里:');
+  await doList();
+}
+
+async function doList() {
+  log('--- 会话列表 ---');
+  const r = await fetch(BASE + '/sessions?user_id=0');
+  const d = await r.json();
+  sessions = d.sessions || [];
+  sessions.forEach(s => {
+    log(`  id=${s.id} msgs=${s.message_count} active=${s.is_active} preview=${(s.preview||'').substring(0,40)}`);
+  });
+}
+
+async function doResume() {
+  if (sessions.length < 2) { log('需要至少2个会话'); return; }
+  const old = sessions[1]; // second one (not current)
+  log('--- 恢复会话 id=' + old.id + ' ---');
+  const r = await fetch(BASE + '/start?user_id=0&session_id=' + old.id, {method:'POST'});
+  const d = await r.json();
+  log('msgs=' + (d.messages?.length||0) + ', filled=' + d.filled);
+}
+</script>
+</body></html>

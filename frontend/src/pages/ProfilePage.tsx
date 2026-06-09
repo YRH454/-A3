@@ -4,12 +4,16 @@ import ProfilePanel from '../components/ProfilePanel'
 import SessionSidebar from '../components/SessionSidebar'
 
 export default function ProfilePage() {
-  const [sessionId, setSessionId] = useState<number | null>(null)
+  const [sid, setSid] = useState<number | null>(null)
 
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-      <SessionSidebar activeId={sessionId} onSelect={setSessionId} onNew={() => setSessionId(null)} />
-      <ChatPanel sessionId={sessionId} onSessionId={setSessionId} />
+      <SessionSidebar
+        activeId={sid}
+        onSelect={(id) => setSid(id)}
+        onNew={() => setSid(null)}
+      />
+      <ChatPanel key={sid ?? 'new'} sessionId={sid} onSessionId={setSid} />
       <ProfilePanel />
     </div>
   )

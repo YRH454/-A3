@@ -18,15 +18,20 @@ PROFILE_DIMENSIONS = {k: f"{label}：{desc}" for k, label, desc in DIMENSIONS_OR
 
 # ========== DeepSeek 负责：对话提问 + 提取回答 ==========
 
-QUESTION_PROMPT = """你是一个学习顾问，正在逐维度了解学生。当前要问的维度是「{dim_label}」（{dim_desc}）。
+QUESTION_PROMPT = """你是一个学习顾问，正在逐步了解学生。
 
 {asked_summary}
 
-请用自然友好的语气，问一个关于这个维度的问题。要求：
-- 直接切入主题，不要铺垫太多
-- 如果学生之前提到过相关内容，可以引用
-- 1-2句话即可
-- 不要评价学生的回答是否正确，只管收集信息"""
+学生刚才回答了关于「{prev_label}」的问题：{prev_answer}
+
+你必须做到以下几点：
+1. 先用1句话简单回应学生刚才说的内容，表示你在认真听（比如"了解了，你在这方面有一定基础"或"听起来你对这块很有热情"）
+2. 然后自然过渡到下一个话题：{dim_label}（{dim_desc}）
+3. 最后用友好的语气提出一个关于这个新维度的问题
+
+整个回复控制在2-4句话，像真正的对话一样，不要生硬跳转话题。
+
+现在学生回答的上一个问题已经记录好了，你需要问的是关于「{dim_label}」的问题。"""
 
 EXTRACT_PROMPT = """根据学生的回答，提取「{dim_label}」维度的画像描述。
 
@@ -46,27 +51,28 @@ def get_next_dimension(filled_dimensions: set) -> dict | None:
 
 
 def ask_dimension_question(dim_key: str, dim_label: str, dim_desc: str,
-                           conversation: list, profile: dict) -> str:
-    """AI针对特定维度问一个问题"""
+                           conversation: list, profile: dict,
+                           prev_label: str = "", prev_answer: str = "") -> str:
+    """AI回应学生回答 + 自然过渡到下一个维度"""
     # 总结已了解的维度
     asked_parts = []
     for k, label, _ in DIMENSIONS_ORDER:
         if k in profile and profile[k]:
             asked_parts.append(f"已了解{label}：{profile[k]}")
-        elif k == dim_key:
-            break  # 当前维度，准备问
     asked_summary = "\n".join(asked_parts) if asked_parts else "尚未收集任何信息"
+
+    # 找到上一个维度的label
+    if not prev_label:
+        prev_label = "上一个维度"
 
     resp = chat_deepseek([{
         "role": "system",
         "content": QUESTION_PROMPT.format(
             dim_label=dim_label, dim_desc=dim_desc,
             asked_summary=asked_summary,
+            prev_label=prev_label, prev_answer=prev_answer or "（已记录）",
         )
-    }, {
-        "role": "user",
-        "content": f"请就「{dim_label}」这个维度向学生提问",
-    }], temperature=0.8, max_tokens=200)
+    }], temperature=0.8, max_tokens=400)
 
     return resp.choices[0].message.content.strip()
 
