@@ -54,14 +54,26 @@ def ask_dimension_question(dim_key: str, dim_label: str, dim_desc: str,
                            conversation: list, profile: dict,
                            prev_label: str = "", prev_answer: str = "") -> str:
     """AI回应学生回答 + 自然过渡到下一个维度"""
-    # 总结已了解的维度
     asked_parts = []
     for k, label, _ in DIMENSIONS_ORDER:
         if k in profile and profile[k]:
             asked_parts.append(f"已了解{label}：{profile[k]}")
     asked_summary = "\n".join(asked_parts) if asked_parts else "尚未收集任何信息"
 
-    # 找到上一个维度的label
+    # 第一条消息：简单打招呼 + 提问，不需要"回应"
+    if not prev_answer:
+        resp = chat_deepseek([{
+            "role": "system",
+            "content": f"""你是一个友好的学习顾问，正在了解一位新学生。
+
+{asked_summary}
+
+请用自然友好的语气打个招呼，然后问一个关于「{dim_label}」的问题（{dim_desc}）。
+2-3句话，像真人对话一样，不要模板化。"""
+        }], temperature=0.8, max_tokens=200)
+        return resp.choices[0].message.content.strip()
+
+    # 后续消息：先回应，再过渡
     if not prev_label:
         prev_label = "上一个维度"
 
@@ -70,7 +82,7 @@ def ask_dimension_question(dim_key: str, dim_label: str, dim_desc: str,
         "content": QUESTION_PROMPT.format(
             dim_label=dim_label, dim_desc=dim_desc,
             asked_summary=asked_summary,
-            prev_label=prev_label, prev_answer=prev_answer or "（已记录）",
+            prev_label=prev_label, prev_answer=prev_answer,
         )
     }], temperature=0.8, max_tokens=400)
 
