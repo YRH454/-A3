@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:8000/api/v1'
+const BASE = 'http://localhost:8001/api/v1'
 
 // ---- Auth ----
 export async function loginApi(email: string, password: string) {
@@ -41,6 +41,17 @@ export async function sendMessage(userId: number, message: string, sessionId?: n
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
+}
+
+export async function chatWithAgent(userId: number, message: string, onEvent: (data: any) => void) {
+  const res = await fetch(`${BASE}/profile/chat/agent`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, message }),
+  })
+  if (!res.ok) throw new Error(`Agent error: ${res.status}`)
+  const data = await res.json()
+  if (data.events) data.events.forEach(onEvent)
+  return data
 }
 
 export async function getProfileSessions(userId: number) {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
-import { startProfile, sendMessage } from '../services/api'
+import { startProfile, sendMessage, chatWithAgent } from '../services/api'
 import ProfileCard from './ProfileCard'
 import ProfileGenerating from './ProfileGenerating'
 
@@ -51,30 +51,24 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
 
   const handleSend = () => {
     const text = input.trim()
-    if (!text || isLoading || done) return
+    if (!text || isLoading) return
 
     addMessage({ role: 'user', content: text })
     setInput('')
     setLoading(true)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
-    // If this is the last question (6/7 filled), show ritual waiting
-    const store = useChatStore.getState()
-    if (store.filled >= 6) {
-      setGenerating(true)
-    }
-
-    sendMessage(user.id, text, sessionId ?? undefined)
+    chatWithAgent(user.id, text, (evt) => {
+      // Real-time events from Agent Loop
+      if (evt.event === 'tool_call') {
+        // Show tool being called
+      }
+    })
       .then((data) => {
-        addMessage({ role: 'assistant', content: data.reply })
-        if (data.profile) setProfile(data.profile)
-        if (data.visual) setVisual(data.visual)
-        if (data.current_dim) setCurrentDim(data.current_dim)
-        else setCurrentDim(null)
-        setFilled(data.filled || 0)
-        if (data.done) {
+        if (data.answer) addMessage({ role: 'assistant', content: data.answer })
+        if (data.status === 'done') {
           setDone(true)
-          setTimeout(() => setGenerating(false), 1000)
+          setGenerating(false)
         }
         setLoading(false)
       })
