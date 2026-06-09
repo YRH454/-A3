@@ -133,3 +133,62 @@ def reset_profile(user_id: int):
 @router.get("/meta/dimensions")
 def get_dimensions():
     return {"dimensions": {k: v for k, v in PROFILE_DIMENSIONS.items()}}
+
+
+# ─── Agent SSE Stream ───────────────────────────────────
+
+from fastapi.responses import StreamingResponse
+import asyncio
+import threading
+
+@router.post("/chat/agent")
+async def profile_chat_agent(req: ChatRequest):
+    """SSE 流式 Agent Loop —— LLM 自主决定工具调用顺序"""
+    from app.services.agent_service import run_agent
+
+    async def generate():
+        queue = asyncio.Queue()
+        done = threading.Event()
+
+        def on_event(evt: str, data: dict):
+            try:
+                loop = asyncio.get_event_loop()
+                loop.call_soon_threadsafe(queue.put_nowait, {"event": evt, "data": data})
+            except Exception:
+                pass
+
+        def run_blocking():
+            try:
+                result = run_agent(req.message, on_event=on_event)
+                loop = asyncio.get_event_loop()
+                loop.call_soon_threadsafe(queue.put_nowait, {"event": "__done__", "data": result})
+            except Exception as e:
+                loop = asyncio.get_event_loop()
+                loop.call_soon_threadsafe(queue.put_nowait, {"event": "__error__", "data": str(e)})
+            finally:
+                done.set()
+
+        # Start agent in background thread
+        t = threading.Thread(target=run_blocking, daemon=True)
+        t.start()
+
+        # Stream events as they arrive
+        while not done.is_set() or not queue.empty():
+            try:
+                msg = await asyncio.wait_for(queue.get(), timeout=0.5)
+                if msg["event"] == "__done__":
+                    yield f"data: {json.dumps({'event': 'done', 'data': msg['data']}, ensure_ascii=False)}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                elif msg["event"] == "__error__":
+                    yield f"data: {json.dumps({'event': 'error', 'data': msg['data']}, ensure_ascii=False)}\n\n"
+                    return
+                yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
+            except asyncio.TimeoutError:
+                continue
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
