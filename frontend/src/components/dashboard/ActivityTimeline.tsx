@@ -1,25 +1,40 @@
 import { recentActivities } from './mockData'
 import './ActivityTimeline.css'
 
+const typeLabels: Record<string, string> = {
+  tutor: '辅导',
+  resources: '资源',
+  profile: '画像',
+  path: '路径',
+}
+
 export default function ActivityTimeline() {
   return (
-    <div className="activity-panel">
+    <section className="activity-panel">
       <div className="at-header">
-        <h3 className="at-title">🕐 最近活动</h3>
-        <span className="at-more">查看更多</span>
+        <div>
+          <h3 className="at-title">最近动态</h3>
+          <p>系统正在根据行为刷新画像和任务优先级</p>
+        </div>
+        <span className="at-live">Live</span>
       </div>
       <div className="at-list">
         {recentActivities.map((act, i) => (
-          <div key={i} className="at-item">
-            <span className="at-time">{act.time}</span>
-            <div className="at-dot-line">
+          <article key={`${act.time}-${act.desc}`} className="at-item">
+            <div className="at-rail">
               <span className={`at-dot${i === 0 ? ' at-dot-active' : ''}`} />
               {i < recentActivities.length - 1 && <span className="at-line" />}
             </div>
-            <span className="at-desc">{act.desc}</span>
-          </div>
+            <div className="at-body">
+              <div className="at-meta">
+                <span>{act.time}</span>
+                <em>{typeLabels[act.type] || '记录'}</em>
+              </div>
+              <p>{act.desc}</p>
+            </div>
+          </article>
         ))}
       </div>
-    </div>
+    </section>
   )
 }

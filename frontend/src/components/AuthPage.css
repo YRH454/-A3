@@ -4,7 +4,10 @@
   justify-content: center;
   min-height: 100vh;
   position: relative;
-  background: linear-gradient(135deg, #F5F0E8 0%, #EDE5D8 30%, #F2ECE0 60%, #F9F6F0 100%);
+  background:
+    radial-gradient(ellipse at 20% 20%, var(--main-gradient-a) 0%, transparent 52%),
+    radial-gradient(ellipse at 80% 80%, var(--main-gradient-b) 0%, transparent 52%),
+    var(--bg-base);
   overflow: hidden;
 }
 
@@ -12,9 +15,9 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(212,132,90,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(91,140,123,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(222,176,64,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse at 20% 20%, var(--main-gradient-a) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, var(--main-gradient-b) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, var(--main-gradient-c) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -24,11 +27,12 @@
   max-width: 900px;
   width: 95%;
   min-height: 560px;
-  background: #FFFAF5;
+  background: var(--bg-card);
   border-radius: 20px;
+  border: 1px solid var(--glass-border);
   box-shadow:
-    0 4px 32px rgba(58,50,44,0.08),
-    0 1px 4px rgba(58,50,44,0.04);
+    var(--shadow-lg),
+    var(--shadow-xs);
   overflow: hidden;
   animation: cardIn 0.6s ease-out;
 }
@@ -41,7 +45,7 @@
 /* ---- Left: Brand + Role Cards ---- */
 .auth-left {
   flex: 0 0 380px;
-  background: linear-gradient(170deg, #3C342E 0%, #2C2520 100%);
+  background: var(--sidebar-bg);
   padding: 36px 32px;
   display: flex;
   flex-direction: column;
@@ -58,35 +62,35 @@
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,132,90,0.15), transparent 70%);
+  background: radial-gradient(circle, var(--accent-brand-bg), transparent 70%);
 }
 
 .auth-logo {
   width: 52px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #D4845A, #C0603A);
+  background: linear-gradient(135deg, var(--accent-brand-light), var(--accent-brand));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   color: #fff;
   margin-bottom: 12px;
-  box-shadow: 0 4px 16px rgba(212,132,90,0.3);
+  box-shadow: var(--glow-amber);
 }
 
 .auth-name {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 32px;
   font-weight: 600;
-  color: #FFFAF5;
+  color: var(--text-primary);
   margin: 0 0 4px;
   letter-spacing: 1px;
 }
 
 .auth-tagline {
   font-size: 13px;
-  color: #B8A898;
+  color: var(--text-secondary);
   margin: 0 0 24px;
   font-weight: 300;
   letter-spacing: 0.5px;
@@ -110,7 +114,7 @@
 }
 
 .role-card:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--glass-hover);
 }
 
 .role-icon {
@@ -124,19 +128,19 @@
   flex-shrink: 0;
 }
 
-.admin-role .role-icon { background: rgba(222,176,64,0.2); color: #E8C840; }
-.user-role .role-icon { background: rgba(91,140,123,0.2); color: #5B8C7B; }
-.guest-role .role-icon { background: rgba(180,160,140,0.2); color: #B4A08C; }
+.admin-role .role-icon { background: var(--accent-brand-bg); color: var(--accent-brand); }
+.user-role .role-icon { background: rgba(52,211,153,0.2); color: #34D399; }
+.guest-role .role-icon { background: var(--border-light); color: var(--text-secondary); }
 
 .role-title {
   font-size: 13px;
   font-weight: 600;
-  color: #E5DDD0;
+  color: var(--text-primary);
 }
 
 .role-desc {
   font-size: 11px;
-  color: #9C9084;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
@@ -163,7 +167,7 @@
   align-items: center;
   gap: 16px;
   margin: 20px 0;
-  color: #B8ADA2;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -172,22 +176,22 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #E8E0D4;
+  background: var(--border-light);
 }
 
 .guest-btn {
   height: 48px;
-  border: 2px dashed #D4C8B8 !important;
-  color: #8C7F72 !important;
+  border: 2px dashed var(--border) !important;
+  color: var(--text-secondary) !important;
   font-size: 15px;
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .guest-btn:hover {
-  border-color: #D4845A !important;
-  color: #D4845A !important;
-  background: rgba(212,132,90,0.04) !important;
+  border-color: var(--accent-brand) !important;
+  color: var(--accent-brand) !important;
+  background: var(--accent-brand-bg) !important;
 }
 
 /* Responsive */

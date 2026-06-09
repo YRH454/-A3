@@ -1,49 +1,44 @@
+import { useState } from 'react'
 import WelcomeArea from '../components/dashboard/WelcomeArea'
 import DailyQuests from '../components/dashboard/DailyQuests'
 import ProgressRings from '../components/dashboard/ProgressRings'
 import ActivityTimeline from '../components/dashboard/ActivityTimeline'
 import StudyChart from '../components/dashboard/StudyChart'
 import EnhancedFeatureCards from '../components/dashboard/EnhancedFeatureCards'
+import CurrentTaskPanel from '../components/dashboard/CurrentTaskPanel'
 import './Pages.css'
 
 export default function Dashboard() {
+  const [resourceState, setResourceState] = useState<'idle' | 'generating' | 'ready'>('idle')
+
+  const handleGenerateResource = () => {
+    if (resourceState === 'generating') return
+    setResourceState('generating')
+    window.setTimeout(() => setResourceState('ready'), 1200)
+  }
+
   return (
     <div className="page-container dash-page-new">
-      {/* #6 欢迎区 */}
-      <WelcomeArea />
+      <div className="dash-workspace">
+        <main className="dash-core animate-in" style={{ animationDelay: '0.05s' }}>
+          <WelcomeArea />
+          <CurrentTaskPanel
+            resourceState={resourceState}
+            onGenerate={handleGenerateResource}
+          />
+          <DailyQuests />
+          <StudyChart />
+        </main>
 
-      {/* #3 每日任务 */}
-      <DailyQuests />
+        <aside className="dash-side animate-in" style={{ animationDelay: '0.12s' }}>
+          <ActivityTimeline />
+          <EnhancedFeatureCards resourceReady={resourceState === 'ready'} />
+        </aside>
+      </div>
 
-      {/* 中间双栏：#1 进度环 + #2 活动时间线 */}
-      <div className="dash-mid-row">
+      <section className="dash-insight-row animate-in" style={{ animationDelay: '0.18s' }}>
         <ProgressRings />
-        <ActivityTimeline />
-      </div>
-
-      {/* #4 学习时长图表 */}
-      <StudyChart />
-
-      {/* #5 增强功能卡片 */}
-      <EnhancedFeatureCards />
-
-      {/* 原有统计行 */}
-      <div className="dash-stats">
-        <div className="dash-stat-item">
-          <div className="dash-stat-num">7</div>
-          <div className="dash-stat-txt">功能模块</div>
-        </div>
-        <div className="dash-stat-divider" />
-        <div className="dash-stat-item">
-          <div className="dash-stat-num">6</div>
-          <div className="dash-stat-txt">AI 智能体</div>
-        </div>
-        <div className="dash-stat-divider" />
-        <div className="dash-stat-item">
-          <div className="dash-stat-num">8</div>
-          <div className="dash-stat-txt">画像维度</div>
-        </div>
-      </div>
+      </section>
     </div>
   )
 }

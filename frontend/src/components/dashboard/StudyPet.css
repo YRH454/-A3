@@ -59,14 +59,14 @@
   bottom: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
-  background: #FFFBF7;
-  border: 1px solid #E8E2DA;
+  background: #1E293B;
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
   padding: 7px 12px;
   font-size: 11px; font-weight: 500;
-  color: #1E1510;
+  color: #F1F5F9;
   white-space: nowrap;
-  box-shadow: 0 3px 14px rgba(30,21,16,0.07);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   z-index: 20;
   animation: dialogSlideIn 0.28s ease-out;
   pointer-events: none;
@@ -76,16 +76,16 @@
   position: absolute; top: 100%; left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top: 5px solid #FFFBF7;
+  border-top: 5px solid #1E293B;
 }
-.pet-dialog.mood-happy   { border-color: #FDE68A; background: #FFFBEB; }
-.pet-dialog.mood-happy::after   { border-top-color: #FFFBEB; }
-.pet-dialog.mood-shocked { border-color: #FCA5A5; background: #FFF5F5; }
-.pet-dialog.mood-shocked::after { border-top-color: #FFF5F5; }
-.pet-dialog.mood-sleepy  { border-color: #DDD6FE; background: #F8F7FF; }
-.pet-dialog.mood-sleepy::after  { border-top-color: #F8F7FF; }
-.pet-dialog.mood-dusty   { border-color: #E5E0D8; background: #F5F2ED; color: #8C7F72; }
-.pet-dialog.mood-dusty::after   { border-top-color: #F5F2ED; }
+.pet-dialog.mood-happy   { border-color: rgba(245,158,11,0.4); background: #1E1B15; color: #FDE68A; }
+.pet-dialog.mood-happy::after   { border-top-color: #1E1B15; }
+.pet-dialog.mood-shocked { border-color: rgba(248,113,113,0.4); background: #1F1515; color: #FCA5A5; }
+.pet-dialog.mood-shocked::after { border-top-color: #1F1515; }
+.pet-dialog.mood-sleepy  { border-color: rgba(167,139,250,0.4); background: #18151F; color: #DDD6FE; }
+.pet-dialog.mood-sleepy::after  { border-top-color: #18151F; }
+.pet-dialog.mood-dusty   { border-color: rgba(255,255,255,0.08); background: #1A1D23; color: #94A3B8; }
+.pet-dialog.mood-dusty::after   { border-top-color: #1A1D23; }
 
 @keyframes dialogSlideIn {
   from { opacity: 0; transform: translateX(-50%) translateY(6px); }

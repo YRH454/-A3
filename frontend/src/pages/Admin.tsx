@@ -70,9 +70,6 @@ export default function Admin() {
     } catch { message.error('操作失败') }
   }
 
-  const roleColors: Record<string, string> = { admin: 'gold', user: 'green', guest: 'default' }
-  const roleLabels: Record<string, string> = { admin: '管理员', user: '用户', guest: '游客' }
-
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: '用户名', dataIndex: 'username' },

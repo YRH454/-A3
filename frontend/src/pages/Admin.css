@@ -1,15 +1,18 @@
-.admin-page { padding: 24px 32px; height: 100%; overflow-y: auto; }
+.admin-page { padding: 24px 32px; height: 100%; overflow-y: auto; position: relative; z-index: 1; }
 
 .admin-title {
   font-family: var(--font-display);
   font-size: 24px;
   font-weight: 600;
-  color: #1E1510;
+  color: var(--text-primary);
   margin: 0 0 20px;
 }
 
 .admin-page .ant-card {
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.04);
-  box-shadow: 0 1px 4px rgba(30,21,16,0.03);
+  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-xs);
 }

@@ -15,16 +15,15 @@ export default function StudyChart() {
   const chartInstance = useRef<echarts.ECharts | null>(null)
   const [period, setPeriod] = useState<Period>('week')
 
-  // 初始化图表
   useEffect(() => {
     if (!chartRef.current) return
     chartInstance.current = echarts.init(chartRef.current)
     return () => {
       chartInstance.current?.dispose()
+      chartInstance.current = null
     }
   }, [])
 
-  // 数据变化时更新图表
   useEffect(() => {
     if (!chartInstance.current) return
     const data = period === 'week' ? weeklyStudyData : monthlyStudyData
@@ -33,9 +32,9 @@ export default function StudyChart() {
     chartInstance.current.setOption({
       tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(255,255,255,0.95)',
-        borderColor: '#E8E2DA',
-        textStyle: { color: '#1E1510', fontSize: 12 },
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#F1F5F9', fontSize: 12 },
         formatter: (params: unknown) => {
           const p = (params as { name: string; value: number }[])[0]
           return `${p.name}<br/>学习 <b>${p.value}</b> 分钟`
@@ -45,21 +44,21 @@ export default function StudyChart() {
       xAxis: {
         type: 'category',
         data: xData,
-        axisLine: { lineStyle: { color: '#E8E2DA' } },
-        axisLabel: { color: '#A89888', fontSize: 11 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+        axisLabel: { color: '#94A3B8', fontSize: 11 },
         axisTick: { show: false },
       },
       yAxis: {
         type: 'value',
         name: '分钟',
         nameTextStyle: {
-          color: '#A89888',
+          color: '#94A3B8',
           fontSize: 10,
           padding: [0, 30, 0, 0],
         },
         axisLine: { show: false },
-        axisLabel: { color: '#A89888', fontSize: 11 },
-        splitLine: { lineStyle: { color: '#F0EBE5', type: 'dashed' } },
+        axisLabel: { color: '#94A3B8', fontSize: 11 },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } },
       },
       series: [
         {
@@ -69,15 +68,15 @@ export default function StudyChart() {
           itemStyle: {
             borderRadius: [6, 6, 0, 0],
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#F59E0B' },
-              { offset: 1, color: '#D97706' },
+              { offset: 0, color: '#FBBF24' },
+              { offset: 1, color: '#F59E0B' },
             ]),
           },
           emphasis: {
             itemStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#FBBF24' },
-                { offset: 1, color: '#F59E0B' },
+                { offset: 0, color: '#FDE68A' },
+                { offset: 1, color: '#FBBF24' },
               ]),
             },
           },
@@ -86,7 +85,6 @@ export default function StudyChart() {
     })
   }, [period])
 
-  // 窗口缩放自适应
   useEffect(() => {
     const handleResize = () => chartInstance.current?.resize()
     window.addEventListener('resize', handleResize)
@@ -94,9 +92,12 @@ export default function StudyChart() {
   }, [])
 
   return (
-    <div className="study-chart-panel">
+    <section className="study-chart-panel">
       <div className="sc-header">
-        <h3 className="sc-title">📈 学习时长统计</h3>
+        <div>
+          <h3 className="sc-title">即时学习数据</h3>
+          <p className="sc-subtitle">当前任务相关的学习时长变化</p>
+        </div>
         <div className="sc-tabs">
           <button
             className={`sc-tab${period === 'week' ? ' sc-tab-active' : ''}`}
@@ -113,6 +114,6 @@ export default function StudyChart() {
         </div>
       </div>
       <div ref={chartRef} className="sc-chart" />
-    </div>
+    </section>
   )
 }

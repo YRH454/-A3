@@ -4,10 +4,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: #F5F0E6;
+  background: var(--bg-chat);
   background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(212,132,90,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, rgba(91,140,123,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse at 20% 0%, rgba(245,158,11,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(52,211,153,0.04) 0%, transparent 60%);
 }
 
 .chat-welcome {
@@ -258,7 +258,7 @@
 .profile-completion-bar {
   flex: 1;
   height: 6px;
-  background: #F0EBE0;
+  background: var(--border-light);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -286,7 +286,7 @@
 .profile-dim-card {
   padding: 14px 16px;
   border-radius: var(--radius-sm);
-  background: #FDFAF5;
+  background: color-mix(in srgb, var(--bg-card) 74%, transparent);
   border: 1px solid transparent;
   transition: all 0.4s ease;
   position: relative;
@@ -294,8 +294,8 @@
 }
 
 .profile-dim-card.filled {
-  border-color: #E8DDD0;
-  background: #FFFBF7;
+  border-color: rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.06);
 }
 
 .profile-dim-card.filled::before {
@@ -334,7 +334,7 @@
 
 .profile-dim-card.current {
   border-color: var(--accent-gold);
-  background: #FFFAF0;
+  background: rgba(245, 158, 11, 0.1);
   box-shadow: 0 0 12px rgba(222, 176, 64, 0.15);
   animation: pulseBorder 2s ease-in-out infinite;
 }
@@ -383,7 +383,7 @@
 .radar-track {
   flex: 1;
   height: 6px;
-  background: #F0EBE0;
+  background: var(--border-light);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -407,8 +407,8 @@
   position: relative;
   margin: 8px 0;
   border-radius: 18px;
-  background: #FFFBF7;
-  border: 1px solid #EBE0D2;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   overflow: hidden;
   animation: cardReveal 0.6s ease-out;
   box-shadow:
@@ -492,7 +492,7 @@
 
 .pfc-score-track {
   height: 7px;
-  background: #F0EAE0;
+  background: var(--border-light);
   border-radius: 4px;
   overflow: hidden;
 }

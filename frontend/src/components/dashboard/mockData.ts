@@ -1,15 +1,14 @@
 /**
- * Dashboard 组件的 Mock 数据
- * 后续接入数据库后，替换为 API 调用即可
+ * Dashboard mock data.
+ * Replace these structures with API responses when the learning telemetry is ready.
  */
 
 export const moduleProgress = [
-  { key: 'profile', label: '我的画像', progress: 72, color: '#D97706', icon: '🎯' },
-  { key: 'generate', label: '资源生成', progress: 45, color: '#C88A2E', icon: '📝' },
-  { key: 'path', label: '学习路径', progress: 30, color: '#4A7C6B', icon: '🗺️' },
-  { key: 'resources', label: '资源库', progress: 15, color: '#5B7ABF', icon: '📚' },
-  { key: 'tutor', label: '智能辅导', progress: 58, color: '#7C6DB8', icon: '🤖' },
-  { key: 'report', label: '学习报告', progress: 20, color: '#4A90A0', icon: '📊' },
+  { key: 'profile', label: '我的画像', progress: 72, color: '#F59E0B', icon: '◎' },
+  { key: 'path', label: '学习路径', progress: 42, color: '#34D399', icon: '⌁' },
+  { key: 'resources', label: '资源库', progress: 28, color: '#60A5FA', icon: '▣' },
+  { key: 'tutor', label: '智能辅导', progress: 58, color: '#A78BFA', icon: '✦' },
+  { key: 'report', label: '学习报告', progress: 24, color: '#2DD4BF', icon: '▰' },
 ]
 
 export interface DailyQuest {
@@ -22,9 +21,9 @@ export interface DailyQuest {
 }
 
 export const dailyQuests: DailyQuest[] = [
-  { id: 1, title: '完成一次学习', icon: '🎯', current: 2, target: 3, completed: false },
-  { id: 2, title: '使用 AI 辅导', icon: '🤖', current: 0, target: 1, completed: false },
-  { id: 3, title: '生成一份资源', icon: '📄', current: 1, target: 1, completed: true },
+  { id: 1, title: '完成 30 分钟学习', icon: '01', current: 22, target: 30, completed: false },
+  { id: 2, title: '用 AI 追问一道错题', icon: '02', current: 0, target: 1, completed: false },
+  { id: 3, title: '整理一份学习资源', icon: '03', current: 1, target: 1, completed: true },
 ]
 
 export interface Activity {
@@ -34,11 +33,11 @@ export interface Activity {
 }
 
 export const recentActivities: Activity[] = [
-  { time: '10:23', desc: '使用智能辅导问了3个数学问题', type: 'tutor' },
-  { time: '09:15', desc: '生成了线性代数学习资源', type: 'generate' },
-  { time: '昨天', desc: '完成了画像维度评估', type: 'profile' },
-  { time: '6月6日', desc: '更新了学习路径规划', type: 'path' },
-  { time: '6月5日', desc: '浏览了概率论资源库', type: 'resources' },
+  { time: '10:23', desc: '智能辅导拆解了 3 个函数题的解题步骤', type: 'tutor' },
+  { time: '09:15', desc: '生成并归档了「线性代数错题强化」资源包', type: 'resources' },
+  { time: '昨天', desc: '完成学习画像的阶段性评估', type: 'profile' },
+  { time: '6月7日', desc: '更新了本周学习路径和知识点顺序', type: 'path' },
+  { time: '6月6日', desc: '浏览了概率论专题资源', type: 'resources' },
 ]
 
 export const weeklyStudyData = [45, 30, 60, 25, 55, 0, 0]
@@ -46,7 +45,29 @@ export const monthlyStudyData = [180, 220, 150, 195]
 export const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 export const monthWeeks = ['第1周', '第2周', '第3周', '第4周']
 
-/** 学习宠物配置 */
+export const abilityRadar = [
+  { key: 'concept', label: '概念理解', value: 82, color: '#F59E0B' },
+  { key: 'practice', label: '练习稳定性', value: 64, color: '#34D399' },
+  { key: 'review', label: '复盘质量', value: 46, color: '#60A5FA' },
+  { key: 'transfer', label: '迁移应用', value: 58, color: '#A78BFA' },
+  { key: 'pace', label: '学习节奏', value: 74, color: '#2DD4BF' },
+]
+
+export const knowledgeTree = [
+  { label: '函数基础', value: 86 },
+  { label: '导数应用', value: 68 },
+  { label: '综合建模', value: 39 },
+]
+
+export const currentTask = {
+  title: '补强导数应用中的临界点判断',
+  course: '高等数学 · 本周重点',
+  minutes: 28,
+  accuracy: 85,
+  weakPoint: '复合函数求导后容易漏掉定义域限制',
+  nextAction: '根据画像生成 12 分钟微课、5 道针对性练习和一张知识卡片。',
+}
+
 export const petConfig = {
   type: 'cat' as 'cat' | 'dog',
   currentSubject: 'math' as 'math' | 'english' | 'general' | null,
@@ -56,34 +77,25 @@ export const petConfig = {
 }
 
 export const motivationalQuotes = [
-  '持续进步，今天比昨天多学一点',
-  '每一次学习都是对未来的投资',
-  '知识的积累，从每一个小目标开始',
-  '学习不止，成长不息',
-  '今天的努力，是明天的底气',
-  '一步一个脚印，终会到达目的地',
-  '学习是最好的自我投资',
-  '每天进步1%，一年后你将脱胎换骨',
-  '坚持的力量，超乎你的想象',
-  '学习不是任务，而是成长的方式',
+  '今天的重点不是学完所有内容，而是把一个薄弱点真正吃透。',
+  '每一次追问，都会让画像更懂你一点。',
+  '把难点拆小，进度就会重新开始流动。',
+  '稳定复盘，比一次性冲刺更接近长期进步。',
+  '学习系统的价值，是让下一步永远清楚。',
 ]
 
-/** 模块路径映射 */
 export const pathMap: Record<string, string> = {
   profile: '/profile',
-  generate: '/generate',
   path: '/path',
   resources: '/resources',
   tutor: '/tutor',
   report: '/report',
 }
 
-/** 模块描述映射 */
 export const descMap: Record<string, string> = {
-  profile: 'AI 对话了解你的学习特点，构建专属画像',
-  generate: '多智能体协同工作，一键生成学习资料',
-  path: '知识图谱 + AI规划，定制最优路线',
-  resources: '浏览和管理所有已生成的学习资源',
-  tutor: '遇到问题？AI 导师即时答疑解惑',
-  report: '多维度评估，数据驱动持续进步',
+  profile: 'AI 对话理解你的基础、目标和学习偏好',
+  path: '根据知识树安排下一阶段学习顺序',
+  resources: '生成、归档和复用个性化学习资料',
+  tutor: '遇到问题时获得即时拆解和追问',
+  report: '用阶段数据定位强弱项和改进方向',
 }

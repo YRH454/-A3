@@ -1,36 +1,46 @@
 .study-chart-panel {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 18px 22px;
   margin-bottom: 20px;
-  flex-shrink: 0;
 }
 
 .sc-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 8px;
 }
 
 .sc-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e1510;
+  color: var(--text-primary);
   margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.sc-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .sc-tabs {
   display: flex;
-  gap: 4px;
-  background: #f5f0e6;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  padding: 2px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sc-tab {
-  padding: 4px 14px;
+  padding: 5px 16px;
   border: none;
   background: none;
   border-radius: 6px;
@@ -42,10 +52,10 @@
 }
 
 .sc-tab-active {
-  background: #fff;
+  background: rgba(245, 158, 11, 0.15);
   color: var(--accent-brand);
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .sc-chart {

@@ -21,7 +21,9 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
       onEnter()
     } catch (e: any) {
       message.error(e?.detail || '登录失败')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRegister = async (values: { username: string; email: string; password: string }) => {
@@ -29,11 +31,13 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
     try {
       const data = await registerApi(values.username, values.email, values.password)
       login({ ...data.user, token: data.token })
-      message.success('注册成功！')
+      message.success('注册成功')
       onEnter()
     } catch (e: any) {
       message.error(e?.detail || '注册失败')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGuest = async () => {
@@ -43,9 +47,11 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
       login({ ...data.user, token: data.token })
       message.info(data.notice)
       onEnter()
-    } catch (e: any) {
+    } catch {
       message.error('游客登录失败')
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -55,31 +61,31 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
       <div className="auth-card">
         <div className="auth-left">
           <div className="auth-brand">
-            <div className="auth-logo">?</div>
+            <div className="auth-logo">境</div>
             <h1 className="auth-name">学境</h1>
-            <p className="auth-tagline">你的 AI 学习伙伴</p>
+            <p className="auth-tagline">你的 AI 学习工作台</p>
           </div>
 
           <div className="auth-roles">
             <div className="role-card admin-role">
-              <div className="role-icon">?</div>
+              <div className="role-icon">管</div>
               <div className="role-info">
                 <div className="role-title">管理员</div>
-                <div className="role-desc">系统管理与数据监控</div>
+                <div className="role-desc">系统管理与学习数据监控</div>
               </div>
             </div>
             <div className="role-card user-role">
-              <div className="role-icon">?</div>
+              <div className="role-icon">学</div>
               <div className="role-info">
                 <div className="role-title">注册用户</div>
-                <div className="role-desc">完整画像定制 ? 资源生成 ? 学习路径</div>
+                <div className="role-desc">画像定制 · 任务触发资源 · 学习路径</div>
               </div>
             </div>
             <div className="role-card guest-role">
-              <div className="role-icon">?</div>
+              <div className="role-icon">试</div>
               <div className="role-info">
                 <div className="role-title">游客体验</div>
-                <div className="role-desc">试用3个维度画像 ? 24小时有效</div>
+                <div className="role-desc">试用 3 个画像维度 · 24 小时有效</div>
               </div>
             </div>
           </div>
@@ -120,7 +126,7 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
                     <Form.Item name="email" rules={[{ required: true, message: '请输入邮箱' }]}>
                       <Input prefix={<MailOutlined />} placeholder="邮箱地址" />
                     </Form.Item>
-                    <Form.Item name="password" rules={[{ required: true, min: 6, message: '密码至少6位' }]}>
+                    <Form.Item name="password" rules={[{ required: true, min: 6, message: '密码至少 6 位' }]}>
                       <Input.Password prefix={<LockOutlined />} placeholder="密码" />
                     </Form.Item>
                     <Button type="primary" htmlType="submit" loading={loading} block>
@@ -144,7 +150,7 @@ export default function AuthPage({ onEnter }: { onEnter: () => void }) {
             size="large"
             className="guest-btn"
           >
-            游客模式 —— 无需注册，立即体验
+            游客模式，立即体验
           </Button>
         </div>
       </div>
