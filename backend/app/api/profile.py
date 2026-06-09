@@ -84,9 +84,9 @@ def profile_chat(req: ChatRequest):
 
     messages.append({"role": "user", "content": req.message})
     extracted = extract_dimension_answer(dim["key"], dim["label"], messages, req.message)
-    if extracted:
-        profile[dim["key"]] = extracted
-        filled.add(dim["key"])
+    # 无论如何都要填充维度，不能卡住
+    profile[dim["key"]] = extracted or f"学生简答：{req.message[:80]}"
+    filled.add(dim["key"])
 
     next_dim = get_next_dimension(filled)
     if next_dim is None:

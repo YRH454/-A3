@@ -109,10 +109,21 @@ def extract_dimension_answer(dim_key: str, dim_label: str,
     }], temperature=0.3, max_tokens=200, json_mode=True)
 
     try:
-        data = json.loads(resp.choices[0].message.content.strip())
-        return data.get(dim_key, "").strip() or None
-    except json.JSONDecodeError:
-        return None
+        text = resp.choices[0].message.content.strip()
+        # 清理可能的 markdown 代码块
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
+        data = json.loads(text)
+        extracted = data.get(dim_key, "").strip()
+        if extracted:
+            return extracted
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+    # 兜底：如果 LLM 提取失败，直接用用户原话（确保维度不会卡住）
+    if user_answer and len(user_answer) > 2:
+        return f"学生提到：{user_answer[:100]}"
+    return None
 
 
 # ========== DeepSeek 生成文本报告 + 千问设计视觉 ==========
