@@ -15,6 +15,9 @@ from app.services.profile_db import (
 
 router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
 
+# 内存缓存：DB不稳定时的兜底方案
+_profile_cache: dict[int, dict] = {}
+
 
 # ─── 会话管理 ────────────────────────────────────────
 
@@ -48,7 +51,11 @@ def start_profile(user_id: int, session_id: int = None):
 
     # 不带session_id = 创建全新会话
     from app.database import execute
-    execute("UPDATE chat_sessions SET is_active = FALSE WHERE user_id = %s AND session_type = 'profile_building' AND is_active = TRUE", (user_id,))
+    try:
+        execute("UPDATE chat_sessions SET is_active = FALSE WHERE user_id = %s AND session_type = 'profile_building' AND is_active = TRUE", (user_id,))
+    except Exception:
+        pass
+    _profile_cache.pop(user_id, None)
 
     dim = DIMENSIONS_ORDER[0]
     key, label, desc = dim
@@ -69,7 +76,10 @@ def profile_chat(req: ChatRequest):
     sess = get_chat_session_by_id(req.session_id) if req.session_id else get_chat_session(req.user_id)
     sid = sess["id"] if sess else None
     messages = sess["messages"] if sess else []
-    profile = sess.get("profile", {}) if sess else {}
+    # 优先内存缓存，DB不可靠时作为兜底
+    uid = req.user_id
+    profile = _profile_cache.get(uid) or sess.get("profile", {}) if sess else {}
+    _profile_cache[uid] = profile
 
     filled = {k for k, v in profile.items() if v and v.strip()}
     dim = get_next_dimension(filled)
@@ -78,30 +88,42 @@ def profile_chat(req: ChatRequest):
         full = generate_final_profile(profile, messages)
         messages.append({"role": "user", "content": req.message})
         messages.append({"role": "assistant", "content": full["report"]})
-        save_chat_session(req.user_id, messages, session_id=sid)
-        save_profile(req.user_id, full["profile"])
+        try:
+            save_chat_session(req.user_id, messages, session_id=sid)
+            save_profile(req.user_id, full["profile"])
+        except Exception:
+            pass
         return {"reply": full["report"], "profile": full["profile"], "visual": full.get("visual"), "current_dim": None, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": True}
 
     messages.append({"role": "user", "content": req.message})
-    extracted = extract_dimension_answer(dim["key"], dim["label"], messages, req.message)
-    # 无论如何都要填充维度，不能卡住
-    profile[dim["key"]] = extracted or f"学生简答：{req.message[:80]}"
-    filled.add(dim["key"])
+    cur_dim_key = dim["key"]
+    extracted = extract_dimension_answer(cur_dim_key, dim["label"], messages, req.message)
+    profile[cur_dim_key] = extracted or f"学生提到：{req.message[:80]}"
+    filled.add(cur_dim_key)
+    # DEBUG: log
+    import builtins
+    builtins.print(f"[DEBUG] dim={cur_dim_key}, filled={filled}, profile_keys={list(profile.keys())}", flush=True)
 
     next_dim = get_next_dimension(filled)
     if next_dim is None:
         full = generate_final_profile(profile, messages)
         messages.append({"role": "assistant", "content": full["report"]})
-        save_chat_session(req.user_id, messages, session_id=sid)
-        save_profile(req.user_id, full["profile"])
+        try:
+            save_chat_session(req.user_id, messages, session_id=sid)
+            save_profile(req.user_id, full["profile"])
+        except Exception:
+            pass
         return {"reply": full["report"], "profile": full["profile"], "visual": full.get("visual"), "current_dim": None, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": True}
 
     question = ask_dimension_question(next_dim["key"], next_dim["label"], next_dim["desc"],
         messages, profile, prev_label=dim["label"], prev_answer=req.message)
     messages.append({"role": "assistant", "content": question})
-    save_chat_session(req.user_id, messages, session_id=sid)
-    save_profile(req.user_id, profile)
-    return {"reply": question, "profile": profile, "current_dim": {"key": next_dim["key"], "label": next_dim["label"]}, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": False}
+    try:
+        save_chat_session(req.user_id, messages, session_id=sid)
+        save_profile(req.user_id, profile)
+    except Exception:
+        pass  # DB超时不阻塞对话
+    return {"reply": question, "profile": profile, "current_dim": {"key": next_dim["key"], "label": next_dim["label"]}, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": False, "_v": "v3-nostuck", "_keys": list(profile.keys())}
 
 
 @router.get("/{user_id}")
