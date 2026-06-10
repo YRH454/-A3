@@ -1,6 +1,6 @@
 """学生画像 API — 逐维度提问，实时画像更新"""
 import json
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.agents.profile_agent import (
@@ -248,17 +248,11 @@ def generate_profile_image(user_id: int):
         for key, label, _ in DIMENSIONS_ORDER
     )
 
-    prompt_resp = chat_deepseek([{
-        "role": "system",
-        "content": f"""Based on this student profile, write a short English prompt (under 40 words) for an AI image generator. Describe a warm, educational illustration scene. No text.
-
-Profile:
-{profile_text}
-
-Return only the English prompt."""
-    }], temperature=0.7, max_tokens=100)
-
-    prompt = prompt_resp.choices[0].message.content.strip()
+    # 直接用中文数据构造英文prompt，避免DeepSeek返回空
+    interests = profile_data.get("interests", "learning")
+    goals = profile_data.get("goals", "education")
+    style = profile_data.get("learning_style", "studying")
+    prompt = f"A warm illustration of a student passionate about {interests}, working towards {goals}, learning style: {style}. Educational tech atmosphere, modern workspace, soft lighting, professional illustration style."
     image_url = generate_glm_image(prompt)
     if not image_url:
         raise HTTPException(500, "图片生成失败")
