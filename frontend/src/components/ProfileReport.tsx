@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useChatStore } from '../stores/chatStore'
+import { useAuthStore } from '../stores/authStore'
 import * as echarts from 'echarts'
 
 const DIM_KEYS = ['knowledge_base', 'learning_style', 'weak_points', 'interests', 'goals', 'learning_pace', 'interaction_pref']
@@ -10,9 +11,24 @@ const DIM_LABELS: Record<string, string> = {
 
 export default function ProfileReport() {
   const { visual, done } = useChatStore()
+  const userId = useAuthStore(s => s.user?.id ?? 0)
   const chartRef = useRef<HTMLDivElement>(null)
+  const [genLoading, setGenLoading] = useState(false)
+  const [genImage, setGenImage] = useState('')
 
   if (!done || !visual) return null
+
+  const handleGenImage = async () => {
+    setGenLoading(true)
+    try {
+      const BASE = 'http://localhost:8001/api/v1'
+      const r = await fetch(`${BASE}/profile/${userId}/generate-image`, { method: 'POST' })
+      if (r.ok) {
+        const d = await r.json()
+        setGenImage(d.image_url)
+      }
+    } catch {} finally { setGenLoading(false) }
+  }
 
   const { radar_scores = {}, card_title = '', atmosphere = '',
     strengths = [], growth_areas = [], learning_quote = '', radar_data } = visual as any
@@ -98,6 +114,18 @@ export default function ProfileReport() {
       {learning_quote && (
         <div className="pr-quote">"{learning_quote}"</div>
       )}
+
+      {/* AI Image Generation */}
+      <div className="pr-image-section">
+        <button className="pr-gen-btn" onClick={handleGenImage} disabled={genLoading}>
+          {genLoading ? '生成中...' : '🎨 生成AI画像插图'}
+        </button>
+        {genImage && (
+          <div className="pr-image-wrap">
+            <img src={`http://localhost:8001${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
+          </div>
+        )}
+      </div>
 
       {/* Learning Resources */}
       {visual.resources?.length > 0 && (

@@ -47,3 +47,46 @@ def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=Fa
     if tools:
         kwargs["tools"] = tools
     return deepseek.chat.completions.create(**kwargs)
+
+
+def generate_wan_image(prompt: str, size: str = "1024*1024") -> str | None:
+    """通义万相 wan2.6-t2i 生成画像插图"""
+    import os, json, base64, time
+    api_key = os.getenv("QWEN_API_KEY")
+    if not api_key:
+        return None
+    try:
+        resp = __import__("httpx").post(
+            "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+            json={"model": "wan2.6-t2i", "input": {"messages": [{"role": "user", "content": [{"text": prompt}]}]},
+                  "parameters": {"prompt_extend": True, "watermark": False, "n": 1, "size": size}},
+            timeout=120,
+        )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        choices = data.get("output", {}).get("choices", [])
+        if not choices:
+            return None
+        content = choices[0].get("message", {}).get("content", [])
+        img_url = None
+        for item in content:
+            if isinstance(item, dict) and "image" in item:
+                img_url = item["image"]
+                break
+        if not img_url:
+            return None
+        img_resp = __import__("httpx").get(img_url, timeout=30)
+        if img_resp.status_code != 200:
+            return None
+        static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "profiles")
+        os.makedirs(static_dir, exist_ok=True)
+        fname = f"profile_{int(time.time())}.png"
+        fpath = os.path.join(static_dir, fname)
+        with open(fpath, "wb") as f:
+            f.write(img_resp.content)
+        return f"/static/profiles/{fname}"
+    except Exception as e:
+        print(f"[Wan] {e}")
+        return None

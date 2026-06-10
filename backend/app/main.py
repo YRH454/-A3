@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.profile import router as profile_router
 from app.api.auth import router as auth_router
 from app.api.admin import router as admin_router
@@ -23,6 +25,11 @@ app.include_router(profile_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(resources_router)
+
+# AI生成画像静态文件
+_static_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+os.makedirs(os.path.join(_static_root, "profiles"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=_static_root), name="static")
 
 
 @app.get("/")

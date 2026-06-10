@@ -230,3 +230,42 @@ async def profile_chat_agent(req: ChatRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ─── AI画像生成 ──────────────────────────────────────
+
+@router.post("/{user_id}/generate-image")
+def generate_profile_image(user_id: int):
+    """DeepSeek提炼画像描述 + 通义万相生成插图"""
+    from app.services.llm import generate_wan_image
+    p = get_profile(user_id)
+    if not p:
+        raise HTTPException(404, "请先完成画像构建")
+
+    profile_data = p["profile"]
+    profile_text = "\n".join(
+        f"- {label}：{profile_data.get(key, '')}"
+        for key, label, _ in DIMENSIONS_ORDER
+    )
+
+    prompt_resp = chat_deepseek([{
+        "role": "system",
+        "content": f"""Based on this student profile, write a short English prompt (under 40 words) for an AI image generator. Describe a warm, educational illustration scene. No text.
+
+Profile:
+{profile_text}
+
+Return only the English prompt."""
+    }], temperature=0.7, max_tokens=100)
+
+    prompt = prompt_resp.choices[0].message.content.strip()
+    image_url = generate_wan_image(prompt)
+    if not image_url:
+        raise HTTPException(500, "图片生成失败")
+
+    images = profile_data.get("__images__", []) or []
+    images.append({"url": image_url, "created_at": p["updated_at"]})
+    profile_data["__images__"] = images
+    save_profile(user_id, profile_data)
+
+    return {"image_url": image_url, "prompt": prompt}
