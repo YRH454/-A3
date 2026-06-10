@@ -8,7 +8,7 @@ from app.config import (
     MIMO_API_KEY, MIMO_BASE_URL,
 )
 
-http_client = httpx.Client(proxy="http://127.0.0.1:7897", timeout=60)
+http_client = httpx.Client(timeout=60)
 
 qwen = OpenAI(api_key=QWEN_API_KEY, base_url=QWEN_BASE_URL, http_client=http_client)
 seedance = OpenAI(api_key=SEEDANCE_API_KEY, base_url=SEEDANCE_BASE_URL, http_client=http_client)
