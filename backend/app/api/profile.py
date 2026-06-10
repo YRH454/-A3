@@ -237,7 +237,7 @@ async def profile_chat_agent(req: ChatRequest):
 @router.post("/{user_id}/generate-image")
 def generate_profile_image(user_id: int):
     """DeepSeek提炼画像描述 + 通义万相生成插图"""
-    from app.services.llm import generate_glm_image
+    from app.services.llm import generate_glm_image, chat_deepseek
     p = get_profile(user_id)
     if not p:
         raise HTTPException(404, "请先完成画像构建")

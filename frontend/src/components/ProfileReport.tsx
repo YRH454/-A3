@@ -9,7 +9,7 @@ const DIM_LABELS: Record<string, string> = {
   interests: '兴趣方向', goals: '学习目标', learning_pace: '学习节奏', interaction_pref: '交互偏好',
 }
 
-export default function ProfileReport() {
+export default function ProfileReport({ onClose }: { onClose?: () => void }) {
   const { visual, done, messages } = useChatStore()
   const userId = useAuthStore(s => s.user?.id ?? 0)
   const chartRef = useRef<HTMLDivElement>(null)
@@ -71,7 +71,10 @@ export default function ProfileReport() {
   }, [scores, radar_data, card_title])
 
   return (
-    <div className="profile-report">
+    <div className="profile-report" style={{ position: 'absolute', inset: 0, zIndex: 200, overflow: 'auto', background: 'var(--bg-card, #fff)' }}>
+      {onClose && (
+        <button onClick={onClose} style={{ position: 'sticky', top: 8, left: 8, zIndex: 10, padding: '6px 14px', border: 'none', borderRadius: 8, background: '#333', color: '#fff', cursor: 'pointer', fontSize: 13 }}>← 返回对话</button>
+      )}
       <div className="pr-header">
         <h2>📋 学习画像报告</h2>
         <div className="pr-badge">{card_title}</div>

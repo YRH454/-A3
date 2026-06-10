@@ -15,6 +15,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
   const [input, setInput] = useState('')
   const [hasStartedWithId, setHasStartedWithId] = useState<number | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [showReport, setShowReport] = useState(false)
   const messagesEnd = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -73,6 +74,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
         setFilled(data.filled || 0)
         if (data.done) {
           setDone(true)
+          setShowReport(true)
           setTimeout(() => setGenerating(false), 1000)
         }
         setLoading(false)
@@ -111,7 +113,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
         </div>
       ) : (
         <div className="chat-messages">
-          {done && <ProfileReport />}
+          {done && <ProfileReport onClose={() => setShowReport(false)} />}
           {messages.map((msg, i) => (
             <div key={i} className={`chat-msg ${msg.role}`}>
               <div className="chat-msg-avatar">
