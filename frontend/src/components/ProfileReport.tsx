@@ -10,13 +10,17 @@ const DIM_LABELS: Record<string, string> = {
 }
 
 export default function ProfileReport() {
-  const { visual, done } = useChatStore()
+  const { visual, done, messages } = useChatStore()
   const userId = useAuthStore(s => s.user?.id ?? 0)
   const chartRef = useRef<HTMLDivElement>(null)
   const [genLoading, setGenLoading] = useState(false)
   const [genImage, setGenImage] = useState('')
 
   if (!done || !visual) return null
+
+  // 从最后一条助手消息中提取文字报告
+  const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant')
+  const reportText = lastAssistantMsg?.content || ''
 
   const handleGenImage = async () => {
     setGenLoading(true)
@@ -74,6 +78,30 @@ export default function ProfileReport() {
         {atmosphere && <p className="pr-atmo">{atmosphere}</p>}
       </div>
 
+      {/* AI 生成画像插图 */}
+      <div className="pr-image-section">
+        {genImage ? (
+          <div className="pr-image-wrap">
+            <img src={`http://localhost:8001${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
+          </div>
+        ) : (
+          <button className="pr-gen-btn" onClick={handleGenImage} disabled={genLoading}>
+            {genLoading ? '🎨 AI正在生成插图...' : '🎨 生成AI画像插图'}
+          </button>
+        )}
+      </div>
+
+      {/* 文字报告 */}
+      {reportText && (
+        <div className="pr-report-text" dangerouslySetInnerHTML={{
+          __html: reportText
+            .replace(/### (.+)/g, '<h3>$1</h3>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n\n/g, '<br/><br/>')
+            .replace(/\n/g, '<br/>')
+        }} />
+      )}
+
       <div className="pr-body">
         <div className="pr-chart-section">
           <h3>📊 多维雷达图</h3>
@@ -114,18 +142,6 @@ export default function ProfileReport() {
       {learning_quote && (
         <div className="pr-quote">"{learning_quote}"</div>
       )}
-
-      {/* AI Image Generation */}
-      <div className="pr-image-section">
-        <button className="pr-gen-btn" onClick={handleGenImage} disabled={genLoading}>
-          {genLoading ? '生成中...' : '🎨 生成AI画像插图'}
-        </button>
-        {genImage && (
-          <div className="pr-image-wrap">
-            <img src={`http://localhost:8001${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
-          </div>
-        )}
-      </div>
 
       {/* Learning Resources */}
       {visual.resources?.length > 0 && (

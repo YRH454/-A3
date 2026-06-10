@@ -638,3 +638,7 @@
 .pr-gen-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .pr-image-wrap { margin-top: 14px; }
 .pr-profile-image { max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+.pr-report-text { padding: 16px 0; line-height: 1.8; color: #333; font-size: 14px; }
+.pr-report-text h3 { font-size: 16px; font-weight: 600; color: #555; margin: 16px 0 8px; }
+.pr-report-text strong { color: #D4845A; }
