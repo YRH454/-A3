@@ -18,7 +18,9 @@ export default function ProfileGenerating() {
     let current = 0
     const run = () => {
       if (current >= stages.length) {
-        setVisible(false)
+        // 循环最后两步，不自动消失 — 等父组件关闭
+        current = stages.length - 2
+        run()
         return
       }
       setStage(current)

@@ -49,32 +49,24 @@ def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=Fa
     return deepseek.chat.completions.create(**kwargs)
 
 
-def generate_wan_image(prompt: str, size: str = "1024*1024") -> str | None:
-    """通义万相 wan2.6-t2i 生成画像插图"""
-    import os, json, base64, time
-    api_key = os.getenv("QWEN_API_KEY")
+def generate_glm_image(prompt: str, size: str = "1280x1280") -> str | None:
+    """智谱 GLM-Image 生成画像插图"""
+    import os, json, time
+    api_key = os.getenv("GLM_IMAGE_API_KEY") or os.getenv("QWEN_API_KEY")
     if not api_key:
         return None
     try:
         resp = __import__("httpx").post(
-            "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            "https://open.bigmodel.cn/api/paas/v4/images/generations",
             headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-            json={"model": "wan2.6-t2i", "input": {"messages": [{"role": "user", "content": [{"text": prompt}]}]},
-                  "parameters": {"prompt_extend": True, "watermark": False, "n": 1, "size": size}},
+            json={"model": "glm-image", "prompt": prompt, "size": size, "watermark_enabled": False},
             timeout=120,
         )
         if resp.status_code != 200:
+            print(f"[GLM-Image] API error: {resp.status_code} {resp.text[:200]}")
             return None
         data = resp.json()
-        choices = data.get("output", {}).get("choices", [])
-        if not choices:
-            return None
-        content = choices[0].get("message", {}).get("content", [])
-        img_url = None
-        for item in content:
-            if isinstance(item, dict) and "image" in item:
-                img_url = item["image"]
-                break
+        img_url = data.get("data", [{}])[0].get("url", "")
         if not img_url:
             return None
         img_resp = __import__("httpx").get(img_url, timeout=30)
@@ -88,5 +80,5 @@ def generate_wan_image(prompt: str, size: str = "1024*1024") -> str | None:
             f.write(img_resp.content)
         return f"/static/profiles/{fname}"
     except Exception as e:
-        print(f"[Wan] {e}")
+        print(f"[GLM-Image] {e}")
         return None
