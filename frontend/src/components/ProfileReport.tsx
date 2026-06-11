@@ -22,16 +22,18 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
   const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant')
   const reportText = lastAssistantMsg?.content || ''
 
-  const handleGenImage = async () => {
+  const handleGenImage = async (e: React.MouseEvent) => {
+    e.preventDefault()
     setGenLoading(true)
     try {
-      const BASE = 'http://localhost:8000/api/v1'
-      const r = await fetch(`${BASE}/profile/${userId}/generate-image`, { method: 'POST' })
+      const r = await fetch(`http://localhost:8000/api/v1/profile/${userId}/generate-image`, { method: 'POST' })
       if (r.ok) {
         const d = await r.json()
         setGenImage(d.image_url)
+      } else {
+        setGenLoading(false)
       }
-    } catch {} finally { setGenLoading(false) }
+    } catch { setGenLoading(false) }
   }
 
   const { radar_scores = {}, card_title = '', atmosphere = '',
