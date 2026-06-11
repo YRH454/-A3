@@ -23,20 +23,17 @@ export default function LearningPath() {
   const handleStart = async () => {
     if (!input.trim() || loading) return
     setLoading(true)
-    setStage('plan')
+    setStage('generating')
+    setAgents({}); setDone([]); setPlan(null)
     try {
-      const r = await fetch(`${BASE}/resources/start`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: uid, message: input }),
-      })
+      const r = await fetch(`${BASE}/resources/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: uid, message: input }) })
       const d = await r.json()
       setPlan(d.plan)
-      setStage('generating')
-      startStreaming(d.session_id)
+      startStreaming(d.session_id, d.plan?.agents?.length || 4)
     } catch { setLoading(false); setStage('input') }
   }
 
-  const startStreaming = (sessionId: number) => {
+  const startStreaming = (sessionId: number, total: number) => {
     esRef.current?.close()
     const es = new EventSource(`${BASE}/resources/generate/stream?user_id=${uid}&session_id=${sessionId}`)
     esRef.current = es
@@ -44,20 +41,17 @@ export default function LearningPath() {
       if (e.data === '[DONE]') { es.close(); return }
       try {
         const d = JSON.parse(e.data)
-        if (d.type === 'agent_start') {
-          setAgents(prev => ({ ...prev, [d.agent]: { label: d.label, status: 'running' } }))
-        } else if (d.type === 'agent_done') {
+        if (d.type === 'plan') { setPlan(d.plan); return }
+        if (d.type === 'agent_start') { setAgents(prev => ({ ...prev, [d.agent]: { label: d.label, status: 'running' } })); return }
+        if (d.type === 'agent_done') {
           setAgents(prev => ({ ...prev, [d.agent]: { label: d.label, status: 'done', content: d.result?.content, type: d.result?.type, title: d.result?.title } }))
-          setDone(prev => [...prev, d.agent])
-        } else if (d.type === 'all_done') {
-          setPackageId(d.package_id)
-          setStage('done')
-          setLoading(false)
-          es.close()
+          setDone(prev => { const n = [...prev, d.agent]; if (n.length >= total) { setTimeout(() => { setStage('done'); setLoading(false) }, 500) } return n })
+          return
         }
+        if (d.type === 'all_done') { setPackageId(d.package_id); setStage('done'); setLoading(false); es.close() }
       } catch {}
     }
-    es.onerror = () => { es.close(); setLoading(false) }
+    es.onerror = () => { if (done.length < total) { setStage('done'); setLoading(false) }; es.close() }
   }
 
   const totalAgents = plan?.agents?.length || 0
