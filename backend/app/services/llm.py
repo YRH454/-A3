@@ -36,7 +36,7 @@ def chat_qwen_stream(messages: list, temperature=0.7, max_tokens=2048):
     )
 
 
-def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=False, tools: list = None):
+def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=False, tools: list = None, search_enable: bool = False):
     """调用 DeepSeek"""
     kwargs = dict(
         model=DEEPSEEK_MODEL, messages=messages,
@@ -46,6 +46,8 @@ def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=Fa
         kwargs["response_format"] = {"type": "json_object"}
     if tools:
         kwargs["tools"] = tools
+    if search_enable:
+        kwargs["extra_body"] = {"search_enable": True}
     return deepseek.chat.completions.create(**kwargs)
 
 
