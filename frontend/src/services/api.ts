@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:8001/api/v1'
+const BASE = 'http://localhost:8000/api/v1'
 
 // ---- Auth ----
 export async function loginApi(email: string, password: string) {

@@ -25,7 +25,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
   const handleGenImage = async () => {
     setGenLoading(true)
     try {
-      const BASE = 'http://localhost:8001/api/v1'
+      const BASE = 'http://localhost:8000/api/v1'
       const r = await fetch(`${BASE}/profile/${userId}/generate-image`, { method: 'POST' })
       if (r.ok) {
         const d = await r.json()
@@ -85,7 +85,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
       <div className="pr-image-section">
         {genImage ? (
           <div className="pr-image-wrap">
-            <img src={`http://localhost:8001${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
+            <img src={`http://localhost:8000${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
           </div>
         ) : (
           <button className="pr-gen-btn" onClick={handleGenImage} disabled={genLoading}>
