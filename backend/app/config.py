@@ -29,6 +29,19 @@ SEEDANCE_BASE_URL = os.getenv("SEEDANCE_BASE_URL")
 MIMO_API_KEY = os.getenv("MIMO_API_KEY")
 MIMO_BASE_URL = os.getenv("MIMO_BASE_URL")
 
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+CLAUDE_BASE_URL = os.getenv("CLAUDE_BASE_URL", "https://api.anthropic.com")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL")
+
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+PERPLEXITY_BASE_URL = os.getenv("PERPLEXITY_BASE_URL")
+
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", 1440))

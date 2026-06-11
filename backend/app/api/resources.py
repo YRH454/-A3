@@ -1,10 +1,14 @@
-"""资源生成 API — 多智能体协同编排"""
+"""资源生成 API — 独立窗口架构 + SSE 流式推送"""
+
 import json
 import logging
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from app.agents.resources_agent import orchestrate, run_agents, AGENT_RUNNERS, AGENT_META
+
+from app.agents.resources_agent import orchestrate, dispatch, dispatch_streaming, AGENT_META
+from app.agents.windows import WINDOW_META, ensure_registry
+
 from app.services.resources_db import (
     init_tables, create_package, save_package_resources, get_package,
     list_packages, create_media_record, get_media_by_package,
@@ -18,7 +22,7 @@ router = APIRouter(prefix="/api/v1/resources", tags=["resources"])
 init_tables()
 
 
-# ─── 会话管理 ────────────────────────────────────────
+# ─── 会话管理 ──────────────────────────────────────────
 
 @router.get("/sessions")
 def list_sessions(user_id: int):
@@ -36,7 +40,7 @@ def new_session(user_id: int):
     return {"status": "ready"}
 
 
-# ─── 核心生成 ────────────────────────────────────────
+# ─── 核心生成 ──────────────────────────────────────────
 
 class StartRequest(BaseModel):
     user_id: int
@@ -75,15 +79,17 @@ def start_generation(req: StartRequest):
     }
 
 
-class GenerateRequest(BaseModel):
-    user_id: int
-    message: str = ""
-    session_id: int = None
-
-
 @router.get("/generate/stream")
 def generate_stream(user_id: int, session_id: int = None):
-    """SSE流式生成：实时推送每个Agent的完成状态"""
+    """SSE 流式生成：每个窗口独立执行，实时推送事件。
+
+    事件类型（前端契约不变）：
+      plan        → 规划结果
+      agent_start → 窗口开始执行
+      agent_done  → 窗口完成（含 result）
+      agent_error → 窗口失败
+      all_done    → 全部完成（含 package_id）
+    """
     sess = get_chat_session_by_id(session_id) if session_id else get_resource_session(user_id)
     messages = sess["messages"] if sess else []
 
@@ -97,42 +103,47 @@ def generate_stream(user_id: int, session_id: int = None):
     plan = orchestrate(last_user, messages)
 
     def event_gen():
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
         agents = plan.get("agents", [])
         yield f"data: {json.dumps({'type': 'plan', 'plan': plan, 'available_agents': AGENT_META}, ensure_ascii=False)}\n\n"
 
-        def run_one(cfg):
-            runner = AGENT_RUNNERS.get(cfg["key"])
-            if not runner:
-                return cfg["key"], {"error": f"未知Agent: {cfg['key']}", "label": cfg.get("label", cfg["key"])}
-            try:
-                result = runner(cfg.get("params", {}))
-                result["agent_label"] = cfg.get("label", cfg["key"])
-                return cfg["key"], result
-            except Exception as e:
-                return cfg["key"], {"error": str(e), "label": cfg.get("label", cfg["key"])}
+        # 使用流式调度器：各自独立的窗口，互不干扰
+        results = {}
+        events_buffer: list[str] = []
 
-        # 一次性并行执行所有Agent
+        def collect_event(event_type: str, data: dict):
+            """收集窗口事件，缓存后逐条 yield"""
+            nonlocal results
+            if event_type == "agent_done":
+                results[data["agent"]] = data.get("result", {})
+                events_buffer.append(
+                    f"data: {json.dumps({'type': 'agent_done', 'agent': data['agent'], 'label': data.get('label', data['agent']), 'result': data.get('result', {})}, ensure_ascii=False)}\n\n"
+                )
+            elif event_type == "agent_error":
+                results[data["agent"]] = {"error": data.get("error")}
+                events_buffer.append(
+                    f"data: {json.dumps({'type': 'agent_error', 'agent': data['agent'], 'error': data.get('error')}, ensure_ascii=False)}\n\n"
+                )
+            elif event_type == "agent_start":
+                events_buffer.append(
+                    f"data: {json.dumps({'type': 'agent_start', 'agent': data['agent'], 'label': data.get('label', data['agent'])}, ensure_ascii=False)}\n\n"
+                )
+
+        # 先发 agent_start 事件
         for cfg in agents:
             yield f"data: {json.dumps({'type': 'agent_start', 'agent': cfg['key'], 'label': cfg.get('label', cfg['key'])}, ensure_ascii=False)}\n\n"
 
-        results = {}
-        with ThreadPoolExecutor(max_workers=len(agents)) as executor:
-            futures = {executor.submit(run_one, cfg): cfg["key"] for cfg in agents}
-            for future in as_completed(futures):
-                key, result = future.result()
-                results[key] = result
-                if "error" in result:
-                    yield f"data: {json.dumps({'type': 'agent_error', 'agent': key, 'error': result.get('error')}, ensure_ascii=False)}\n\n"
-                else:
-                    yield f"data: {json.dumps({'type': 'agent_done', 'agent': key, 'label': result.get('agent_label', key), 'result': result}, ensure_ascii=False)}\n\n"
+        # 并行调度所有窗口
+        dispatch_streaming(plan, collect_event)
 
-        # 保存
+        # 推送缓存的事件
+        for evt in events_buffer:
+            yield evt
+
+        # 保存结果
         package_id = create_package(user_id, plan.get("needs", {}), plan, [a["key"] for a in agents])
         save_package_resources(package_id, results, "done")
 
-        summary = f"已为你生成 {len(results)} 种学习资源：{'、'.join(AGENT_META.get(k, {}).get('label', k) for k in results)}"
+        summary = f"已为你生成 {len(results)} 种学习资源：{'、'.join(WINDOW_META.get(k, {}).get('label', k) for k in results)}"
         messages.append({"role": "assistant", "content": summary})
         save_resource_session(user_id, messages, session_id)
 
@@ -143,8 +154,8 @@ def generate_stream(user_id: int, session_id: int = None):
 
 
 @router.post("/generate")
-def generate_sync(req: GenerateRequest):
-    """同步生成：编排 + 全部Agent执行完成"""
+def generate_sync(req: StartRequest):
+    """同步生成：编排 + 全部窗口执行完成"""
     sess = get_chat_session_by_id(req.session_id) if req.session_id else get_resource_session(req.user_id)
     messages = sess["messages"] if sess else []
 
@@ -165,12 +176,13 @@ def generate_sync(req: GenerateRequest):
     messages.append({"role": "assistant", "content": confirm_msg})
     sid = save_resource_session(req.user_id, messages, session_id=req.session_id)
 
-    results = run_agents(plan)
+    # 独立窗口并行调度
+    results = dispatch(plan)
 
     package_id = create_package(req.user_id, plan.get("needs", {}), plan, [a["key"] for a in agents])
     save_package_resources(package_id, results, "done")
 
-    summary = f"已为你生成 {len(results)} 种学习资源：{'、'.join(AGENT_META.get(k, {}).get('label', k) for k in results)}"
+    summary = f"已为你生成 {len(results)} 种学习资源：{'、'.join(WINDOW_META.get(k, {}).get('label', k) for k in results)}"
     messages.append({"role": "assistant", "content": summary})
     save_resource_session(req.user_id, messages, session_id=sid)
 
