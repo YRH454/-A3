@@ -27,6 +27,7 @@ SEEDANCE_MODEL = os.getenv("SEEDANCE_MODEL")
 SEEDANCE_BASE_URL = os.getenv("SEEDANCE_BASE_URL")
 
 MIMO_API_KEY = os.getenv("MIMO_API_KEY")
+MIMO_MODEL = os.getenv("MIMO_MODEL", "mimo-v2.5")
 MIMO_BASE_URL = os.getenv("MIMO_BASE_URL")
 
 JWT_SECRET = os.getenv("JWT_SECRET")
