@@ -1,10 +1,10 @@
 .pg-overlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(250,248,245,0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(15,10,8,0.78);
+  backdrop-filter: blur(14px);
   z-index: 100;
-  animation: pgFadeIn 0.3s ease-out;
+  animation: pgFadeIn 0.35s ease-out;
 }
 
 @keyframes pgFadeIn {
@@ -15,129 +15,203 @@
 .pg-card {
   text-align: center;
   position: relative;
-  animation: pgCardIn 0.5s ease-out;
+  animation: pgCardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes pgCardIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Core animation ring */
+/* ====== Core ====== */
 .pg-core {
   position: relative;
-  width: 100px; height: 100px;
-  margin: 0 auto 24px;
+  width: 120px; height: 120px;
+  margin: 0 auto 28px;
 }
 
 .pg-core-ring {
   position: absolute; inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(217,119,6,0.15);
-  animation: ringPulse 2s ease-in-out infinite;
+  border: 2px solid rgba(212,132,90,0.2);
+  animation: ringPulse 2.2s ease-in-out infinite;
 }
 
 .pg-core-ring.ring2 {
-  inset: -12px;
-  border-color: rgba(217,119,6,0.08);
-  animation-delay: 0.3s;
+  inset: -14px;
+  border-color: rgba(212,132,90,0.1);
+  animation-delay: 0.4s;
+  animation-duration: 2.6s;
 }
 
 .pg-core-ring.ring3 {
-  inset: -24px;
-  border-color: rgba(217,119,6,0.04);
-  animation-delay: 0.6s;
+  inset: -28px;
+  border-color: rgba(212,132,90,0.06);
+  animation-delay: 0.8s;
+  animation-duration: 3s;
 }
 
 @keyframes ringPulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.08); opacity: 1; }
+  0%, 100% { transform: scale(0.96); opacity: 0.4; }
+  50% { transform: scale(1.06); opacity: 1; }
 }
 
 .pg-core-inner {
-  position: absolute; inset: 8px;
+  position: absolute; inset: 6px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(217,119,6,0.1), rgba(245,158,11,0.15));
+  background: radial-gradient(circle at 40% 35%, rgba(212,132,90,0.2), rgba(30,20,10,0.6));
   display: flex; align-items: center; justify-content: center;
-  animation: coreSpin 4s linear infinite;
+  box-shadow: 0 0 30px rgba(212,132,90,0.25), inset 0 0 15px rgba(212,132,90,0.1);
+  animation: coreGlow 2s ease-in-out infinite;
 }
 
-@keyframes coreSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes coreGlow {
+  0%, 100% { box-shadow: 0 0 25px rgba(212,132,90,0.2), inset 0 0 10px rgba(212,132,90,0.08); }
+  50% { box-shadow: 0 0 45px rgba(212,132,90,0.4), inset 0 0 20px rgba(212,132,90,0.15); }
 }
 
-.pg-core-icon {
-  font-size: 28px;
-  animation: iconFloat 2s ease-in-out infinite;
+.pg-core-inner img {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  animation: whaleFloat 3s ease-in-out infinite;
 }
 
-@keyframes iconFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+@keyframes whaleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(2deg); }
+  75% { transform: translateY(3px) rotate(-2deg); }
 }
 
-/* Text */
+/* ====== Text ====== */
 .pg-stage-text {
-  font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 600;
-  color: #1E1510;
-  margin-bottom: 4px;
-  animation: textFade 0.5s ease;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  animation: textSlide 0.5s ease;
+  letter-spacing: 0.5px;
+}
+
+@keyframes textSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .pg-sub-text {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 24px;
+  letter-spacing: 1px;
 }
 
-/* Progress dots */
+/* ====== Progress bar ====== */
+.pg-progress-bar {
+  width: 260px; height: 3px;
+  margin: 0 auto 20px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pg-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D4845A, #f0a060, #D4845A);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: progressShine 1.5s linear infinite;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(212,132,90,0.4);
+}
+
+@keyframes progressShine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ====== Progress dots ====== */
 .pg-progress {
-  display: flex; gap: 8px; justify-content: center;
+  display: flex; gap: 10px; justify-content: center;
 }
 
 .pg-dot {
-  width: 8px; height: 8px;
+  width: 10px; height: 10px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.4s ease;
 }
 
 .pg-dot.active {
-  background: #D97706;
-  box-shadow: 0 0 8px rgba(217,119,6,0.4);
-  transform: scale(1.4);
+  background: #D4845A;
+  box-shadow: 0 0 14px rgba(212,132,90,0.6), 0 0 28px rgba(212,132,90,0.3);
+  transform: scale(1.5);
 }
 
 .pg-dot.done {
-  background: rgba(217,119,6,0.3);
+  background: rgba(212,132,90,0.4);
+  box-shadow: 0 0 6px rgba(212,132,90,0.2);
 }
 
-/* Sparks */
+/* ====== Sparks ====== */
 .pg-sparks {
   position: absolute;
-  top: 0; left: 50%;
+  top: 50%; left: 50%;
   width: 0; height: 0;
+  pointer-events: none;
 }
 
 .pg-spark {
   position: absolute;
-  width: 4px; height: 4px;
+  width: 3px; height: 3px;
   border-radius: 50%;
-  background: #D97706;
-  animation: sparkFly 2s ease-out infinite;
-  animation-delay: calc(var(--i) * 0.2s);
+  background: #D4845A;
+  animation: sparkFly 2.5s ease-out infinite;
+  animation-delay: calc(var(--i) * 0.25s);
+  box-shadow: 0 0 6px rgba(212,132,90,0.6);
 }
 
 @keyframes sparkFly {
   0% {
     opacity: 1;
-    transform: rotate(var(--angle)) translateY(-40px) scale(1);
+    transform: rotate(var(--angle)) translateY(-50px) scale(1);
+  }
+  60% {
+    opacity: 0.6;
   }
   100% {
     opacity: 0;
-    transform: rotate(var(--angle)) translateY(-120px) scale(0);
+    transform: rotate(var(--angle)) translateY(-150px) scale(0.2);
+  }
+}
+
+/* ====== Floating particles ====== */
+.pg-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.pg-particle {
+  position: absolute;
+  width: 2px; height: 2px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  animation: particleFloat 6s linear infinite;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100vh) scale(1);
+    opacity: 0;
   }
 }

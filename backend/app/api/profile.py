@@ -10,13 +10,44 @@ from app.agents.profile_agent import (
 )
 from app.services.profile_db import (
     get_profile, save_profile, get_chat_session, save_chat_session,
-    get_profile_sessions, get_chat_session_by_id,
+    get_profile_sessions, get_chat_session_by_id, _get_profile_dict,
 )
 
 router = APIRouter(prefix="/api/v1/profile", tags=["profile"])
 
 # 内存缓存：DB不稳定时的兜底方案
 _profile_cache: dict[int, dict] = {}
+
+DIM_LABEL_MAP = {k: label for k, label, _ in DIMENSIONS_ORDER}
+
+def _build_fallback_visual(profile: dict) -> dict:
+    """为缺少 visual 的旧已完成会话重建基本 visual 数据"""
+    scores = {}
+    for k, label, _ in DIMENSIONS_ORDER:
+        val = profile.get(k, "")
+        # 根据回答长度和内容丰富度估算评分
+        if isinstance(val, str) and val.strip():
+            length_score = min(9, max(3, len(val) // 8 + 5))
+            scores[label] = length_score
+        else:
+            scores[label] = 4
+
+    sorted_dims = sorted(scores.items(), key=lambda x: x[1], reverse=True) if scores else []
+    return {
+        "radar_scores": scores,
+        "card_title": f"{sorted_dims[0][0]}型学习者" if sorted_dims else "探索型学习者",
+        "atmosphere": "",
+        "strengths": [f"{sorted_dims[0][0]}突出"] if sorted_dims else [],
+        "growth_areas": [f"{sorted_dims[-1][0]}可加强"] if sorted_dims else [],
+        "learning_quote": "",
+        "resources": [],
+        "roadmap": [],
+        "tags": [],
+        "radar_data": {
+            "indicator": [{"name": label, "max": 1} for _, label, _ in DIMENSIONS_ORDER],
+            "value": [scores.get(label, 5) / 10 for _, label, _ in DIMENSIONS_ORDER],
+        },
+    }
 
 
 # ─── 会话管理 ────────────────────────────────────────
@@ -41,13 +72,39 @@ def start_profile(user_id: int, session_id: int = None):
     if session_id:
         sess = get_chat_session_by_id(session_id)
         if sess and sess.get("messages") and len(sess["messages"]) > 0:
-            profile = sess.get("profile", {})
-            filled = {k for k, v in profile.items() if v and v.strip() and not k.startswith("__")}
-            dim = get_next_dimension(filled)
-            if dim:
-                last_ai = next((m["content"] for m in reversed(sess["messages"]) if m["role"] == "assistant"), sess["messages"][-1]["content"])
-                return {"reply": last_ai, "messages": sess["messages"], "session_id": session_id, "current_dim": {"key": dim["key"], "label": dim["label"]}, "profile": profile, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": False}
-            return {"reply": sess["messages"][-1]["content"], "messages": sess["messages"], "session_id": session_id, "current_dim": None, "profile": profile, "filled": len(DIMENSIONS_ORDER), "total": len(DIMENSIONS_ORDER), "done": True}
+            msgs = sess["messages"]
+            # 从消息中检测是否已完成（最后一条AI消息是报告而非提问）
+            last_ai = next((m["content"] for m in reversed(msgs) if m["role"] == "assistant"), msgs[-1]["content"])
+            is_done = last_ai.startswith("### 学习画像总览") or "学习画像总览" in last_ai[:100]
+
+            if is_done:
+                # 已完成：从全局 profile 中取 visual 数据
+                global_profile = _get_profile_dict(user_id)
+                saved_visual = global_profile.pop("__visual__", None) if isinstance(global_profile, dict) else None
+                if not saved_visual and global_profile:
+                    saved_visual = _build_fallback_visual(global_profile)
+                return {"reply": last_ai, "messages": msgs, "session_id": session_id,
+                        "current_dim": None, "profile": global_profile, "filled": len(DIMENSIONS_ORDER),
+                        "total": len(DIMENSIONS_ORDER), "done": True, "visual": saved_visual}
+
+            # 未完成：从消息重建 profile（不读取全局profile，避免已完成会话污染）
+            profile = {}
+            dim_label_to_key = {label: key for key, label, _ in DIMENSIONS_ORDER}
+            # 从对话历史中提取已处理的维度
+            asked_dims = set()
+            for m in msgs:
+                if m["role"] == "assistant":
+                    for key, label, _ in DIMENSIONS_ORDER:
+                        if label in m["content"]:
+                            asked_dims.add(key)
+            # 估算已填充的维度数（每个用户回复后跟一个AI提取，所以用户消息数≈已填充维度数）
+            user_msg_count = sum(1 for m in msgs if m["role"] == "user")
+            filled_count = min(user_msg_count, len(DIMENSIONS_ORDER))
+            dim = get_next_dimension(set())
+            return {"reply": last_ai, "messages": msgs, "session_id": session_id,
+                    "current_dim": {"key": dim["key"], "label": dim["label"]} if dim else None,
+                    "profile": {}, "filled": filled_count,
+                    "total": len(DIMENSIONS_ORDER), "done": False}
 
     # 不带session_id = 创建全新会话
     from app.database import execute
@@ -81,7 +138,7 @@ def profile_chat(req: ChatRequest):
     profile = _profile_cache.get(uid) or sess.get("profile", {}) if sess else {}
     _profile_cache[uid] = profile
 
-    filled = {k for k, v in profile.items() if v and v.strip()}
+    filled = {k for k, v in profile.items() if isinstance(v, str) and v.strip()}
     dim = get_next_dimension(filled)
 
     if dim is None:
@@ -90,7 +147,10 @@ def profile_chat(req: ChatRequest):
         messages.append({"role": "assistant", "content": full["report"]})
         try:
             save_chat_session(req.user_id, messages, session_id=sid)
-            save_profile(req.user_id, full["profile"])
+            profile_to_save = dict(full["profile"])
+            if full.get("visual"):
+                profile_to_save["__visual__"] = full["visual"]
+            save_profile(req.user_id, profile_to_save)
         except Exception:
             pass
         return {"reply": full["report"], "profile": full["profile"], "visual": full.get("visual"), "current_dim": None, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": True}
@@ -135,7 +195,7 @@ def get_user_profile(user_id: int):
     return {
         "user_id": user_id,
         "profile": p["profile"],
-        "filled": sum(1 for v in p["profile"].values() if v and v.strip()),
+        "filled": sum(1 for v in p["profile"].values() if isinstance(v, str) and v.strip()),
         "total": len(DIMENSIONS_ORDER),
         "exists": True,
         "updated_at": p["updated_at"],

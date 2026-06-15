@@ -2,56 +2,70 @@ import { useEffect, useState } from 'react'
 import './ProfileGenerating.css'
 
 const stages = [
-  { label: '分析知识基础', icon: '?', duration: 800 },
-  { label: '评估学习风格', icon: '?', duration: 900 },
-  { label: '梳理兴趣方向', icon: '?', duration: 700 },
-  { label: '明确学习目标', icon: '?', duration: 800 },
-  { label: '生成专属画像', icon: '?', duration: 1200 },
-  { label: '设计可视化方案', icon: '?', duration: 1000 },
+  { label: '分析知识基础', icon: '📖' },
+  { label: '评估学习风格', icon: '🧠' },
+  { label: '梳理兴趣方向', icon: '💡' },
+  { label: '明确学习目标', icon: '🎯' },
+  { label: 'DeepSeek 生成文字报告', icon: '📝' },
+  { label: '千问 + GLM 设计可视化', icon: '✨' },
 ]
 
 export default function ProfileGenerating() {
   const [stage, setStage] = useState(0)
-  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     let current = 0
+    let timer: ReturnType<typeof setTimeout>
     const run = () => {
       if (current >= stages.length) {
-        // 循环最后两步，不自动消失 — 等父组件关闭
-        current = stages.length - 2
-        run()
+        current = stages.length - 1
+        timer = setTimeout(run, 1000)
         return
       }
       setStage(current)
-      setTimeout(() => { current++; run() }, stages[current].duration)
+      timer = setTimeout(() => { current++; run() }, 900)
     }
-    run()
+    timer = setTimeout(run, 200)
+    return () => clearTimeout(timer)
   }, [])
 
-  if (!visible) return null
+  const pct = Math.round((stage / (stages.length - 1)) * 100)
 
   return (
     <div className="pg-overlay">
+      {/* Floating particles */}
+      <div className="pg-particles">
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className="pg-particle" style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 6}s`,
+            animationDuration: `${5 + Math.random() * 8}s`,
+          }} />
+        ))}
+      </div>
+
       <div className="pg-card">
-        {/* Pulsing core */}
+        {/* Pulsing core with DeepSeek whale */}
         <div className="pg-core">
           <div className="pg-core-ring" />
           <div className="pg-core-ring ring2" />
           <div className="pg-core-ring ring3" />
           <div className="pg-core-inner">
-            <span className="pg-core-icon">
-              {stage < stages.length ? stages[stage].icon : '?'}
-            </span>
+            <img src="/deepseek-whale.png" alt="AI" />
           </div>
         </div>
 
         {/* Stage text */}
-        <div className="pg-stage-text">
-          {stages[stage]?.label || '即将完成'}
+        <div className="pg-stage-text" key={stage}>
+          {stages[stage]?.icon} {stages[stage]?.label || '即将完成'}
         </div>
         <div className="pg-sub-text">
-          DeepSeek + 千问正在协同工作中
+          DeepSeek · 千问 · GLM · 多模型协同
+        </div>
+
+        {/* Progress bar */}
+        <div className="pg-progress-bar">
+          <div className="pg-progress-fill" style={{ width: `${pct}%` }} />
         </div>
 
         {/* Progress dots */}
@@ -66,11 +80,11 @@ export default function ProfileGenerating() {
 
         {/* Particle sparks */}
         <div className="pg-sparks">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(12)].map((_, i) => (
             <div key={i} className="pg-spark" style={{
               '--i': i,
-              '--angle': `${i * 45}deg`,
-              animationDelay: `${i * 0.2}s`,
+              '--angle': `${i * 30}deg`,
+              animationDelay: `${i * 0.18}s`,
             } as React.CSSProperties} />
           ))}
         </div>

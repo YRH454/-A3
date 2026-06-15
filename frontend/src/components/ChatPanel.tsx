@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+﻿import { useState, useRef, useEffect, useCallback } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
 import { startProfile, sendMessage } from '../services/api'
@@ -27,6 +27,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
 
   // Auto-start / switch session
   useEffect(() => {
+    let ignore = false
     const key = sessionId ?? -1
     if (hasStartedWithId === key) return
     setHasStartedWithId(key)
@@ -34,6 +35,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
     useChatStore.getState().reset()
     startProfile(user.id, sessionId ?? undefined)
       .then((data) => {
+        if (ignore) return
         if (data.session_id && !sessionId) { setHasStartedWithId(data.session_id); onSessionId(data.session_id) }
         if (data.messages && Array.isArray(data.messages)) {
           data.messages.forEach((m: any) => addMessage(m))
@@ -41,13 +43,15 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
           addMessage({ role: 'assistant', content: data.reply })
         }
         if (data.current_dim) setCurrentDim(data.current_dim)
-        if (data.profile) setProfile(data.profile)
-        if (data.visual) setVisual(data.visual)
+        setProfile(data.profile || {})
+        setVisual(data.visual || null)
         setFilled(data.filled || 0)
-        if (data.done) setDone(true)
+        setDone(data.done === true)
+        if (data.done) { setShowReport(true) }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => { if (!ignore) setLoading(false) })
+    return () => { ignore = true }
   }, [sessionId])
 
   const handleSend = () => {
@@ -119,7 +123,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
               <div className="chat-msg-avatar">
                 {msg.role === 'user'
                   ? (userAvatar ? <img src={userAvatar} alt="" className="avatar-img" /> : user.username[0])
-                  : <span className="ai-avatar-whale">?</span>
+                  : <img src="/deepseek-whale.png" alt="AI" style={{ width: 28, height: 28, borderRadius: '50%' }} />
                 }
               </div>
               <div className="chat-msg-bubble">
@@ -131,7 +135,7 @@ export default function ChatPanel({ sessionId, onSessionId }: { sessionId: numbe
           ))}
           {isLoading && !generating && (
             <div className="chat-msg assistant">
-              <div className="chat-msg-avatar"><span className="ai-avatar-whale">?</span></div>
+              <div className="chat-msg-avatar"><img src="/deepseek-whale.png" alt="AI" style={{ width: 28, height: 28, borderRadius: '50%' }} /></div>
               <div className="chat-msg-bubble">
                 <div className="typing-dots"><span /><span /><span /></div>
               </div>

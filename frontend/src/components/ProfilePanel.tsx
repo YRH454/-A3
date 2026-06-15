@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useChatStore, DIM_LABELS } from '../stores/chatStore'
 
 const DIM_ORDER = [
@@ -7,13 +8,27 @@ const DIM_ORDER = [
 
 export default function ProfilePanel() {
   const { profile, currentDim, visual, filled, total, done } = useChatStore()
+  const [collapsed, setCollapsed] = useState(false)
 
   const completion = Math.round((filled / total) * 100)
+
+  if (collapsed) {
+    return (
+      <aside className="profile-panel" style={{ width: 36, cursor: 'pointer', justifyContent: 'flex-start', alignItems: 'center', paddingTop: 10 }}
+        onClick={() => setCollapsed(false)} title="展开画像面板">
+        <span style={{ fontSize: 16, writingMode: 'vertical-lr', letterSpacing: 4, color: '#888', userSelect: 'none' }}>画像</span>
+        <span style={{ marginTop: 8, fontSize: 12, color: '#aaa' }}>◀</span>
+      </aside>
+    )
+  }
 
   return (
     <aside className="profile-panel">
       <div className="profile-panel-header">
-        <h3>学习画像</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>学习画像</h3>
+          <button onClick={() => setCollapsed(true)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, color: '#999', padding: '0 4px' }} title="折叠">▶</button>
+        </div>
         <div className="profile-completion">
           <div className="profile-completion-bar">
             <div
@@ -39,7 +54,7 @@ export default function ProfilePanel() {
               className={`profile-dim-card${isFilled ? ' filled' : ''}${isCurrent ? ' current' : ''}`}
             >
               <div className="profile-dim-label">
-                {isFilled ? '? ' : isCurrent ? '? ' : ''}
+                {isFilled ? '✅ ' : isCurrent ? '💬 ' : ''}
                 {DIM_LABELS[key]}
                 {isCurrent && ' ← 正在了解'}
               </div>

@@ -92,7 +92,7 @@ def get_profile_sessions(user_id: int) -> list:
     for r in rows:
         msgs = json.loads(r["messages"]) if isinstance(r["messages"], str) else r["messages"]
         preview = ""
-        for m in msgs:
+        for m in reversed(msgs):
             if m["role"] == "assistant":
                 preview = m["content"][:40]
                 break

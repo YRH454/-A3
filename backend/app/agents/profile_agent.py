@@ -126,12 +126,13 @@ def extract_dimension_answer(dim_key: str, dim_label: str,
     return None
 
 
-# ========== DeepSeek 生成文本报告 + 千问设计视觉 ==========
+# ========== 多模型并行生成 ==========
 
 import re as _re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def generate_final_profile(profile: dict, conversation: list) -> dict:
-    """一次LLM调用同时生成文字报告 + ECharts雷达图配置（参考DeepDiagram的一次输出模式）"""
+    """DeepSeek + Qwen 双模型并行生成 — 速度更快，结果更丰富"""
     conv_text = "\n".join(
         f"{'学生' if m['role'] == 'user' else 'AI'}：{m['content']}"
         for m in conversation
@@ -143,144 +144,175 @@ def generate_final_profile(profile: dict, conversation: list) -> dict:
         profile_lines.append(f"- {label}：{val}" if val else f"- {label}：待了解")
     profile_text = "\n".join(profile_lines)
 
-    # 一次调用：文字报告 + 评分 + 视觉元数据 + ECharts配置
-    resp = chat_deepseek([{
-        "role": "system",
-        "content": f"""你是学习画像分析师+视觉设计师。请根据学生数据一次性生成完整画像报告。
+    # ===== 并行任务1：DeepSeek 生成文字报告 + 评分 =====
+    def call_deepseek():
+        resp = chat_deepseek([{
+            "role": "system",
+            "content": f"""你是学习画像分析师。请根据学生数据生成报告和评分。
 
 学生数据：
 {profile_text}
 
-对话记录：
-{conv_text}
+对话记录（摘要）：
+{conv_text[:2000]}
 
-请严格按照以下格式输出（用 ===SECTION=== 分隔）：
+请严格按格式输出（用 ===SECTION=== 分隔）：
 
 ===REPORT===
-（纯文本报告，不要JSON，不要代码块）
+（纯文本报告）
 
-### 🌟 学习画像总览
+### 学习画像总览
 2-3句话概括学习特质，用第二人称
 
-### 🔍 多维分析
+### 多维分析
 每个维度1-2句分析
 
-### 📌 个性化学习建议
+### 个性化学习建议
 3条具体可执行建议
 
-### 🎯 推荐学习资源
-3种适合的资源形式
-
 ===SCORES===
-（纯JSON对象，7个维度1-10分）
-{{"知识基础": 8, "学习风格": 7, "学习难点": 5, "兴趣方向": 9, "学习目标": 8, "学习节奏": 7, "交互偏好": 6}}
+（纯JSON，7个维度1-10分，根据学生实际回答质量打分，避免全部中等分）
+{{"知识基础": 8, "学习风格": 7, "学习难点": 5, "兴趣方向": 9, "学习目标": 8, "学习节奏": 7, "交互偏好": 6}}"""
+        }], temperature=0.6, max_tokens=2500)
+        text = resp.choices[0].message.content.strip()
+        report = _extract_section(text, "REPORT")
+        report = _re.sub(r'```[^`]*```', '', report)
+        report = _re.sub(r'\n\s*\n\s*\n', '\n\n', report).strip()
+
+        scores = {}
+        scores_text = _extract_section(text, "SCORES")
+        try: scores = json.loads(scores_text)
+        except Exception: pass
+
+        return {"report": report, "scores": scores}
+
+    # ===== 并行任务2：Qwen 生成可视化数据 =====
+    def call_qwen():
+        resp = chat_qwen([{
+            "role": "system",
+            "content": f"""你是视觉设计师。根据学生画像数据生成可视化配置。
+
+学生数据：
+{profile_text}
+
+请严格按格式输出（用 ===SECTION=== 分隔）：
 
 ===VISUAL===
-（纯JSON对象，用于前端可视化）
+（纯JSON）
 {{
     "card_title": "一句话标签（如：夜读型AI探索者）",
-    "atmosphere": "视觉氛围一句话",
+    "atmosphere": "视觉氛围描述",
     "strengths": ["优势1", "优势2"],
     "growth_areas": ["成长方向1", "成长方向2"],
     "learning_quote": "适合的学习格言"
 }}
 
 ===RADAR===
-（纯JSON对象，7维度0-1的值，用于ECharts雷达图）
+（纯JSON，7维度0-1的值）
 {{
     "indicator": [{{"name": "知识基础", "max": 1}}, ...共7个],
     "value": [0.8, 0.7, 0.3, 0.9, 0.8, 0.7, 0.6]
 }}
 
 ===RESOURCES===
-（纯JSON数组，推荐5个具体学习资源）
-[
-    {{"title": "资源名称", "type": "课程/书籍/视频/工具/社区", "url": "搜索关键词或链接", "why": "1句话推荐理由", "difficulty": "入门/中级/高级"}}
-]
+（纯JSON数组，5个具体学习资源）
+[{{"title": "资源名称", "type": "课程/书籍/视频/工具/社区", "url": "", "why": "推荐理由", "difficulty": "入门/中级/高级"}}]
 
 ===ROADMAP===
 （纯JSON数组，3-5步学习路线）
-[
-    {{"step": 1, "title": "阶段名称", "duration": "建议时长", "focus": "本阶段重点", "milestone": "阶段成果"}}
-]
+[{{"step": 1, "title": "阶段名称", "duration": "建议时长", "focus": "本阶段重点", "milestone": "阶段成果"}}]
 
 ===TAGS===
-（纯JSON数组，5-8个标签词概括这个学习者）
-["标签1", "标签2", "标签3", ...]
+（纯JSON数组，5-8个标签词）
+["标签1", "标签2"]"""
+        }], temperature=0.7, max_tokens=2000, json_mode=False)
 
-只按格式输出，不要额外解释。"""
-    }], temperature=0.6, max_tokens=2000)
+        text = resp.choices[0].message.content.strip()
+        visual = {"card_title": "", "atmosphere": "", "strengths": [], "growth_areas": [], "learning_quote": ""}
+        try:
+            v = json.loads(_extract_section(text, "VISUAL"))
+            if isinstance(v, dict): visual.update(v)
+        except Exception: pass
 
-    full_text = resp.choices[0].message.content.strip()
+        radar = {"indicator": [], "value": []}
+        try:
+            radar = json.loads(_extract_section(text, "RADAR"))
+        except Exception: pass
 
-    # 解析各SECTION
-    def _extract_section(text: str, tag: str) -> str:
-        m = _re.search(rf'==={tag}===\s*\n?(.*?)(?=\n===|\Z)', text, _re.DOTALL)
-        return m.group(1).strip() if m else ""
+        resources, roadmap, tags = [], [], []
+        try: resources = json.loads(_extract_section(text, "RESOURCES"))
+        except Exception: pass
+        try: roadmap = json.loads(_extract_section(text, "ROADMAP"))
+        except Exception: pass
+        try: tags = json.loads(_extract_section(text, "TAGS"))
+        except Exception: pass
 
-    report = _extract_section(full_text, "REPORT")
-    report = _re.sub(r'```[^`]*```', '', report)  # 清理可能的代码块
-    report = _re.sub(r'\n\s*\n\s*\n', '\n\n', report).strip()
+        visual["radar_data"] = radar
+        visual["resources"] = resources
+        visual["roadmap"] = roadmap
+        visual["tags"] = tags
 
-    # 处理评分
-    scores = {}
-    scores_text = _extract_section(full_text, "SCORES")
-    try:
-        scores = json.loads(scores_text)
-    except Exception:
+        return {"visual": visual}
+
+    # ===== 并行执行 =====
+    ds_result = {"report": "", "scores": {}}
+    qw_result = {"visual": {"card_title": "", "atmosphere": "", "strengths": [], "growth_areas": [], "learning_quote": "", "radar_data": {"indicator": [], "value": []}, "resources": [], "roadmap": [], "tags": []}}
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {
+            executor.submit(call_deepseek): "deepseek",
+            executor.submit(call_qwen): "qwen",
+        }
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                result = future.result()
+                if key == "deepseek":
+                    ds_result = result
+                else:
+                    qw_result = result
+            except Exception as e:
+                logger = __import__('logging').getLogger(__name__)
+                logger.error(f"{key} 并行任务失败: {e}")
+
+    # ===== 合并结果 =====
+    report = ds_result["report"]
+    scores = ds_result["scores"]
+    visual = qw_result["visual"]
+
+    # Fallback: 如果某个模型失败，用兜底数据
+    if not report:
+        report = f"## 学习画像报告\n\n你的学习画像已生成。各维度评分如下。"
+    if not scores:
         for k, label, _ in DIMENSIONS_ORDER:
             val = profile.get(k, "")
-            scores[label] = min(9, max(3, len(val) // 12 + 4)) if val else 3
+            scores[label] = min(9, max(3, len(val) // 8 + 5)) if val else 4
+    if not visual.get("radar_data") or not visual["radar_data"].get("value"):
+        vals = []
+        for _, label, _ in DIMENSIONS_ORDER:
+            s = scores.get(label, 5)
+            vals.append(s / 10)
+            visual["radar_data"]["indicator"].append({"name": label, "max": 1})
+        visual["radar_data"]["value"] = vals
 
-    # 处理视觉
-    visual = {
-        "radar_scores": scores,
-        "card_title": "", "atmosphere": "",
-        "strengths": [], "growth_areas": [], "learning_quote": "",
-    }
-    visual_text = _extract_section(full_text, "VISUAL")
-    try:
-        visual.update(json.loads(visual_text))
-    except Exception:
+    # 确保 visual 包含 scores
+    visual["radar_scores"] = scores
+
+    # Fallback: 补充缺失的 visual 字段
+    if not visual.get("card_title"):
         sorted_dims = sorted(
             [(label, int(scores.get(label, 5))) for _, label, _ in DIMENSIONS_ORDER],
             key=lambda x: x[1], reverse=True
         )
-        visual["card_title"] = f"{sorted_dims[0][0]}型学习者"
-        visual["strengths"] = [f"{sorted_dims[0][0]}突出", f"{sorted_dims[1][0]}良好"]
-        visual["growth_areas"] = [f"{sorted_dims[-1][0]}可加强"]
-
-    # 处理雷达图数据
-    radar = {"indicator": [], "value": []}
-    radar_text = _extract_section(full_text, "RADAR")
-    try:
-        radar = json.loads(radar_text)
-    except Exception:
-        # 用 scores 兜底
-        for _, label, _ in DIMENSIONS_ORDER:
-            radar["indicator"].append({"name": label, "max": 1})
-            radar["value"].append(scores.get(label, 5) / 10)
-    visual["radar_data"] = radar
-
-    # 学习资源
-    resources_text = _extract_section(full_text, "RESOURCES")
-    try:
-        visual["resources"] = json.loads(resources_text)
-    except Exception:
-        visual["resources"] = []
-
-    # 学习路线
-    roadmap_text = _extract_section(full_text, "ROADMAP")
-    try:
-        visual["roadmap"] = json.loads(roadmap_text)
-    except Exception:
-        visual["roadmap"] = []
-
-    # 标签
-    tags_text = _extract_section(full_text, "TAGS")
-    try:
-        visual["tags"] = json.loads(tags_text)
-    except Exception:
-        visual["tags"] = []
+        visual["card_title"] = f"{sorted_dims[0][0]}型学习者" if sorted_dims else "探索型学习者"
+    if not visual.get("strengths"):
+        visual["strengths"] = [f"{sorted_dims[0][0]}突出" if sorted_dims else "潜力优秀"]
+    if not visual.get("growth_areas"):
+        visual["growth_areas"] = [f"{sorted_dims[-1][0]}可加强" if sorted_dims else "持续成长"]
 
     return {"report": report, "visual": visual, "profile": profile}
+
+
+def _extract_section(text: str, tag: str) -> str:
+    m = _re.search(rf'==={tag}===\s*\n?(.*?)(?=\n===|\Z)', text, _re.DOTALL)
+    return m.group(1).strip() if m else ""

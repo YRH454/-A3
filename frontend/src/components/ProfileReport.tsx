@@ -9,31 +9,49 @@ const DIM_LABELS: Record<string, string> = {
   interests: '兴趣方向', goals: '学习目标', learning_pace: '学习节奏', interaction_pref: '交互偏好',
 }
 
+const DIM_COLORS = ['#4A7C6B', '#D4845A', '#E05555', '#5B8C7B', '#6B5B8C', '#DEB040', '#4A8CB3']
+
 export default function ProfileReport({ onClose }: { onClose?: () => void }) {
   const { visual, done, messages } = useChatStore()
   const userId = useAuthStore(s => s.user?.id ?? 0)
-  const chartRef = useRef<HTMLDivElement>(null)
+  const radarRef = useRef<HTMLDivElement>(null)
+  const bar3dRef = useRef<HTMLDivElement>(null)
   const [genLoading, setGenLoading] = useState(false)
+  const [genProgress, setGenProgress] = useState(0)
   const [genImage, setGenImage] = useState('')
+  const genTimer = useRef<ReturnType<typeof setInterval>>()
 
   if (!done || !visual) return null
 
-  // 从最后一条助手消息中提取文字报告
   const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant')
   const reportText = lastAssistantMsg?.content || ''
 
   const handleGenImage = async (e: React.MouseEvent) => {
     e.preventDefault()
     setGenLoading(true)
+    setGenProgress(0)
+
+    // Simulated progress bar — fills to 90% over ~8 seconds
+    const startTime = Date.now()
+    genTimer.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const fakeProgress = Math.min(90, Math.round((elapsed / 8000) * 90))
+      setGenProgress(fakeProgress)
+    }, 200)
+
     try {
       const r = await fetch(`http://localhost:8000/api/v1/profile/${userId}/generate-image`, { method: 'POST' })
+      if (genTimer.current) { clearInterval(genTimer.current); genTimer.current = undefined }
+      setGenProgress(100)
       if (r.ok) {
         const d = await r.json()
         setGenImage(d.image_url)
-      } else {
-        setGenLoading(false)
       }
-    } catch { setGenLoading(false) }
+      setTimeout(() => setGenLoading(false), 400)
+    } catch {
+      if (genTimer.current) { clearInterval(genTimer.current); genTimer.current = undefined }
+      setGenLoading(false)
+    }
   }
 
   const { radar_scores = {}, card_title = '', atmosphere = '',
@@ -44,33 +62,121 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
     return Number(s)
   })
 
-  // ECharts radar
+  // 2D radar chart
   useEffect(() => {
-    if (!chartRef.current) return
-    const chart = echarts.init(chartRef.current)
+    if (!radarRef.current) return
+    const chart = echarts.init(radarRef.current)
     const indicator = DIM_KEYS.map(k => ({ name: DIM_LABELS[k], max: 10 }))
     const data = radar_data?.value || scores.map((s: number) => s)
 
     chart.setOption({
+      tooltip: { trigger: 'item', backgroundColor: 'rgba(30,30,30,0.85)', textStyle: { color: '#fff', fontSize: 13 } },
       radar: {
-        indicator,
-        shape: 'polygon',
-        center: ['50%', '50%'],
-        radius: '65%',
-        axisName: { color: '#666', fontSize: 12 },
-        splitArea: { areaStyle: { color: ['#fff', '#fafafa', '#fff', '#fafafa'] } },
+        indicator, shape: 'polygon', center: ['50%', '52%'], radius: '68%', splitNumber: 5,
+        axisName: { color: '#555', fontSize: 13, fontWeight: 500 },
+        axisLine: { lineStyle: { color: 'rgba(0,0,0,0.1)' } },
+        splitLine: { lineStyle: { color: 'rgba(0,0,0,0.08)' } },
+        splitArea: { areaStyle: { color: ['rgba(212,132,90,0.03)', 'rgba(212,132,90,0.01)', 'rgba(212,132,90,0.03)', 'rgba(212,132,90,0.01)', 'rgba(212,132,90,0.03)'] } },
       },
       series: [{
-        type: 'radar',
+        type: 'radar', symbol: 'circle', symbolSize: 6,
         data: [{ value: data, name: card_title || '学习画像',
-          areaStyle: { color: 'rgba(212,132,90,0.2)' },
-          lineStyle: { color: '#D4845A', width: 2 },
-          itemStyle: { color: '#D4845A' },
+          areaStyle: { color: { type: 'radial', x: 0.5, y: 0.5, r: 0.5, colorStops: [{ offset: 0, color: 'rgba(212,132,90,0.35)' }, { offset: 1, color: 'rgba(107,91,140,0.15)' }] } },
+          lineStyle: { color: '#D4845A', width: 2.5, shadowBlur: 8, shadowColor: 'rgba(212,132,90,0.4)' },
+          itemStyle: { color: '#D4845A', borderColor: '#fff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(212,132,90,0.5)' },
         }],
       }],
     })
     return () => chart.dispose()
   }, [scores, radar_data, card_title])
+
+  // Stunning 2D bar chart (3D-like with gradients)
+  useEffect(() => {
+    if (!bar3dRef.current) return
+    const chart = echarts.init(bar3dRef.current)
+
+    const labels = DIM_KEYS.map(k => DIM_LABELS[k])
+    const colors = ['#4A7C6B', '#D4845A', '#E05555', '#5B8C7B', '#6B5B8C', '#DEB040', '#4A8CB3']
+
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'rgba(20,16,12,0.9)',
+        borderColor: '#555',
+        textStyle: { color: '#fff' },
+        formatter: (params: any) => {
+          const p = Array.isArray(params) ? params[0] : params
+          return `<b>${p.name}</b><br/>评分: <b style="color:#D4845A;font-size:16px">${p.value}</b> / 10`
+        },
+      },
+      grid: { left: '5%', right: '10%', top: '12%', bottom: '8%' },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLine: { lineStyle: { color: '#e0e0e0' } },
+        axisLabel: { color: '#555', fontSize: 12, fontWeight: 500 },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value', max: 10,
+        splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
+        axisLabel: { color: '#999' },
+        name: '评分',
+        nameTextStyle: { color: '#999', fontSize: 12 },
+      },
+      series: scores.map((score, i) => ({
+        type: 'bar',
+        data: DIM_KEYS.map((_, j) => j === i ? score : null),
+        barWidth: '50%',
+        barGap: '-100%',
+        itemStyle: {
+          borderRadius: [8, 8, 0, 0],
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: colors[i] },
+              { offset: 1, color: colors[i] + '88' },
+            ],
+          },
+          shadowBlur: 10,
+          shadowColor: colors[i] + '40',
+          shadowOffsetY: 2,
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 20,
+            shadowColor: colors[i] + '70',
+          },
+        },
+        label: {
+          show: true,
+          position: 'top',
+          color: '#444',
+          fontSize: 13,
+          fontWeight: 'bold',
+          formatter: score > 0 ? score.toString() : '',
+        },
+        animationDelay: i * 80,
+        animationDuration: 600,
+        animationEasing: 'cubicOut',
+      })),
+    })
+
+    return () => chart.dispose()
+  }, [scores])
+
+  const decorateReport = (text: string) => {
+    return text
+      .replace(/### 学习画像总览/g, '<h3>🌟 学习画像总览</h3>')
+      .replace(/### 多维分析/g, '<h3>🔍 多维分析</h3>')
+      .replace(/### 个性化学习建议/g, '<h3>📌 个性化学习建议</h3>')
+      .replace(/### 推荐学习资源/g, '<h3>🎯 推荐学习资源</h3>')
+      .replace(/### (.+)/g, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>')
+  }
 
   return (
     <div className="profile-report" style={{ position: 'absolute', inset: 0, zIndex: 200, overflow: 'auto', background: 'var(--bg-card, #fff)' }}>
@@ -83,34 +189,47 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         {atmosphere && <p className="pr-atmo">{atmosphere}</p>}
       </div>
 
-      {/* AI 生成画像插图 */}
+      {/* AI 画像插图 */}
       <div className="pr-image-section">
         {genImage ? (
           <div className="pr-image-wrap">
-            <img src={`http://localhost:8000${genImage}`} alt="AI生成的画像插图" className="pr-profile-image" />
+            <img src={`http://localhost:8000${genImage}`} alt="AI生成的画像插图" style={{ width: '100%', maxWidth: 480, borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }} />
+          </div>
+        ) : genLoading ? (
+          <div style={{ padding: '16px 0', textAlign: 'center' }}>
+            <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+              🎨 AI 正在根据你的画像数据生成视觉插图...
+            </div>
+            <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', height: 6, background: '#eee', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{
+                width: `${genProgress}%`, height: '100%',
+                background: `linear-gradient(90deg, #D4845A, #f0a060)`,
+                borderRadius: 3,
+                transition: 'width 0.3s ease',
+                boxShadow: '0 0 8px rgba(212,132,90,0.4)',
+              }} />
+            </div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>{genProgress}%</div>
           </div>
         ) : (
-          <button className="pr-gen-btn" onClick={handleGenImage} disabled={genLoading}>
-            {genLoading ? '🎨 AI正在生成插图...' : '🎨 生成AI画像插图'}
+          <button className="pr-gen-btn" onClick={handleGenImage}>
+            🎨 生成AI画像插图
           </button>
         )}
       </div>
 
-      {/* 文字报告 */}
-      {reportText && (
-        <div className="pr-report-text" dangerouslySetInnerHTML={{
-          __html: reportText
-            .replace(/### (.+)/g, '<h3>$1</h3>')
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n\n/g, '<br/><br/>')
-            .replace(/\n/g, '<br/>')
-        }} />
-      )}
+      {/* 能力维度柱状图 */}
+      <div className="pr-chart-section" style={{ marginBottom: 24 }}>
+        <h3>📊 能力维度评分</h3>
+        <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>各维度独立评分，越高越突出</p>
+        <div ref={bar3dRef} style={{ width: '100%', height: 420 }} />
+      </div>
 
+      {/* 2D 雷达图 */}
       <div className="pr-body">
         <div className="pr-chart-section">
-          <h3>📊 多维雷达图</h3>
-          <div ref={chartRef} style={{ width: '100%', height: 360 }} />
+          <h3>🎯 多维雷达图</h3>
+          <div ref={radarRef} style={{ width: '100%', height: 400 }} />
         </div>
 
         <div className="pr-detail-section">
@@ -119,7 +238,11 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
             <div key={key} className="pr-dim-row">
               <span className="pr-dim-label">{DIM_LABELS[key]}</span>
               <div className="pr-dim-bar-track">
-                <div className="pr-dim-bar-fill" style={{ width: `${(scores[i] / 10) * 100}%` }} />
+                <div className="pr-dim-bar-fill" style={{
+                  width: `${Math.max(2, (scores[i] / 10) * 100)}%`,
+                  background: `linear-gradient(90deg, ${DIM_COLORS[i]}, ${DIM_COLORS[i]}cc)`,
+                  boxShadow: `0 0 8px ${DIM_COLORS[i]}40`,
+                }} />
               </div>
               <span className="pr-dim-score">{scores[i]}/10</span>
             </div>
@@ -148,7 +271,13 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         <div className="pr-quote">"{learning_quote}"</div>
       )}
 
-      {/* Learning Resources */}
+      {/* 文字报告 */}
+      {reportText && (
+        <div className="pr-report-text" dangerouslySetInnerHTML={{
+          __html: decorateReport(reportText)
+        }} />
+      )}
+
       {visual.resources?.length > 0 && (
         <div className="pr-resources">
           <h3>📚 推荐学习资源</h3>
@@ -165,7 +294,6 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      {/* Learning Roadmap */}
       {visual.roadmap?.length > 0 && (
         <div className="pr-roadmap">
           <h3>🗺️ 学习路线建议</h3>
@@ -184,7 +312,6 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         </div>
       )}
 
-      {/* Skill Tags */}
       {visual.tags?.length > 0 && (
         <div className="pr-tags-section">
           <h3>🏷️ 学习者标签</h3>
