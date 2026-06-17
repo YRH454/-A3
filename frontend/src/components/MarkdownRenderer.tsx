@@ -1,10 +1,41 @@
-import { useRef, useEffect } from 'react'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-/** Mermaid 图表渲染：使用 mermaid.ink 在线服务 */
+/** AI 生成的 HTML 可视化页面：用 iframe 沙盒渲染 */
+function HtmlPreview({ code }: { code: string }) {
+  const [showSource, setShowSource] = useState(false)
+
+  return (
+    <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
+      <div style={{ padding: '6px 12px', background: '#f8f6f4', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#555' }}>📊 AI 生成的交互式图解</span>
+        <button onClick={() => setShowSource(!showSource)}
+          style={{ border: '1px solid #ddd', borderRadius: 4, background: '#fff', cursor: 'pointer', fontSize: 11, padding: '2px 8px', color: '#888' }}>
+          {showSource ? '隐藏源码' : '查看源码'}
+        </button>
+      </div>
+      <iframe
+        srcDoc={code}
+        sandbox="allow-scripts"
+        style={{ width: '100%', height: 500, border: 'none', display: 'block' }}
+        title="AI 图解"
+      />
+      {showSource && (
+        <div style={{ borderTop: '1px solid #eee' }}>
+          <SyntaxHighlighter style={oneDark} language="html" PreTag="div"
+            customStyle={{ borderRadius: 0, margin: 0, fontSize: 12, maxHeight: 300 }}>
+            {code}
+          </SyntaxHighlighter>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Mermaid 图表渲染：使用 mermaid.ink 在线服务（fallback） */
 function MermaidBlock({ code }: { code: string }) {
   const encoded = btoa(unescape(encodeURIComponent(code.trim())))
   const url = `https://mermaid.ink/img/${encoded}?theme=default&bgColor=!white`
@@ -22,7 +53,6 @@ function MermaidBlock({ code }: { code: string }) {
 
 /** 视频脚本时间轴渲染 */
 function VideoTimeline({ content }: { content: string }) {
-  // 尝试检测时间轴标记 [00:00-00:30]
   const hasTimeline = /\[\d{2}:\d{2}/.test(content)
   if (!hasTimeline) return null
   return (
@@ -45,7 +75,16 @@ export default function MarkdownRenderer({ content }: { content: string }) {
             const isInline = !match && !codeString.includes('\n')
             const lang = match ? match[1] : ''
 
-            // Mermaid 图表：渲染为真实图表
+            // HTML 可视化页面：用 iframe 渲染
+            if (lang === 'html' && (
+              codeString.includes('<svg') || codeString.includes('<body') ||
+              codeString.includes('<html') || codeString.includes('<canvas') ||
+              codeString.includes('<!DOCTYPE')
+            )) {
+              return <HtmlPreview code={codeString} />
+            }
+
+            // Mermaid 图表：渲染为真实图表（fallback）
             if (lang === 'mermaid') {
               return <MermaidBlock code={codeString} />
             }
