@@ -8,6 +8,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 /** AI 生成的 HTML 可视化页面：用 iframe 沙盒渲染 */
 function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean }) {
   const [showSource, setShowSource] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
 
   // 流式输出中不渲染 iframe，避免闪烁
   if (streaming) {
@@ -31,12 +32,22 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           {showSource ? '隐藏源码' : '查看源码'}
         </button>
       </div>
-      <iframe
-        srcDoc={code}
-        sandbox="allow-scripts allow-popups allow-modals"
-        style={{ width: '100%', height: 500, border: 'none', display: 'block' }}
-        title="AI 图解"
-      />
+      <div style={{ position: 'relative', minHeight: 650 }}>
+        {/* Loading overlay */}
+        {!iframeLoaded && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fdfbf9', zIndex: 1 }}>
+            <div style={{ width: 40, height: 40, border: '3px solid #eee', borderTopColor: '#D4845A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ marginTop: 12, fontSize: 13, color: '#999' }}>正在渲染可视化图表...</div>
+          </div>
+        )}
+        <iframe
+          srcDoc={code}
+          sandbox="allow-scripts allow-same-origin allow-popups allow-modals"
+          style={{ width: '100%', height: 650, border: 'none', display: 'block' }}
+          title="AI 图解"
+          onLoad={() => setIframeLoaded(true)}
+        />
+      </div>
       {showSource && (
         <div style={{ borderTop: '1px solid #eee' }}>
           <SyntaxHighlighter style={oneDark} language="html" PreTag="div"
@@ -45,6 +56,7 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           </SyntaxHighlighter>
         </div>
       )}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
