@@ -5,8 +5,21 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 /** AI 生成的 HTML 可视化页面：用 iframe 沙盒渲染 */
-function HtmlPreview({ code }: { code: string }) {
+function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean }) {
   const [showSource, setShowSource] = useState(false)
+
+  // 流式输出中不渲染 iframe，避免闪烁
+  if (streaming) {
+    return (
+      <div style={{ margin: '12px 0', borderRadius: 10, border: '1px dashed #D4845A', padding: 16, background: '#fdfbf9', textAlign: 'center' }}>
+        <div style={{ fontSize: 13, color: '#D4845A', marginBottom: 8 }}>📊 AI 正在生成交互式图解...</div>
+        <div style={{ fontSize: 12, color: '#999' }}>生成完成后自动渲染可视化页面</div>
+        <div style={{ marginTop: 10, fontSize: 11, color: '#ccc', maxHeight: 80, overflow: 'hidden', textAlign: 'left', fontFamily: 'monospace' }}>
+          {code.slice(0, 200)}...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
@@ -19,7 +32,7 @@ function HtmlPreview({ code }: { code: string }) {
       </div>
       <iframe
         srcDoc={code}
-        sandbox="allow-scripts"
+        sandbox="allow-scripts allow-popups allow-modals"
         style={{ width: '100%', height: 500, border: 'none', display: 'block' }}
         title="AI 图解"
       />
@@ -62,7 +75,7 @@ function VideoTimeline({ content }: { content: string }) {
   )
 }
 
-export default function MarkdownRenderer({ content }: { content: string }) {
+export default function MarkdownRenderer({ content, streaming }: { content: string; streaming?: boolean }) {
   return (
     <div>
       <VideoTimeline content={content} />
@@ -81,7 +94,7 @@ export default function MarkdownRenderer({ content }: { content: string }) {
               codeString.includes('<html') || codeString.includes('<canvas') ||
               codeString.includes('<!DOCTYPE')
             )) {
-              return <HtmlPreview code={codeString} />
+              return <HtmlPreview code={codeString} streaming={streaming} />
             }
 
             // Mermaid 图表：渲染为真实图表（fallback）

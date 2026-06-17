@@ -326,7 +326,7 @@ export default function Tutor() {
                 <div ref={answerRef} style={{ background: '#fff', border: '1px solid #eee', padding: '12px 16px', borderRadius: '2px 12px 12px 12px', fontSize: 14, maxWidth: '85%', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   {currentAnswer ? (
                     <>
-                      <MarkdownRenderer content={currentAnswer} />
+                      <MarkdownRenderer content={currentAnswer} streaming={isGenerating} />
                       {isGenerating && <span style={{ animation: 'blink 1s infinite', marginLeft: 4, color: '#8E6EB4', fontWeight: 700 }}>|</span>}
                     </>
                   ) : (

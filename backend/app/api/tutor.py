@@ -153,7 +153,7 @@ def tutor_chat(req: ChatRequest):
         yield f"data: {json.dumps({'type': 'start', 'qa_id': qa_id, 'mode': mode}, ensure_ascii=False)}\n\n"
 
         try:
-            stream = stream_tutor_answer(llm_messages)
+            stream = stream_tutor_answer(llm_messages, mode=mode)
             for chunk in stream:
                 delta = chunk.choices[0].delta
                 text = delta.content if delta and delta.content else ""

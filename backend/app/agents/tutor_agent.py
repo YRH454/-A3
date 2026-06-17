@@ -173,6 +173,7 @@ def build_tutor_messages(
     return messages
 
 
-def stream_tutor_answer(messages: list):
-    """流式生成辅导回答，返回chunk迭代器"""
-    return chat_deepseek_stream(messages, temperature=0.5, max_tokens=4096)
+def stream_tutor_answer(messages: list, mode: str = "text"):
+    """流式生成辅导回答，图解模式给更多token"""
+    max_tok = 8192 if mode == "diagram" else 6144
+    return chat_deepseek_stream(messages, temperature=0.5, max_tokens=max_tok)
