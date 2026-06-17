@@ -199,3 +199,17 @@ export async function streamTutorChat(
     }),
   })
 }
+
+// ---- Report (学习报告) ----
+
+export async function getReportSummary(userId: number) {
+  const res = await fetch(`${BASE}/report/summary?user_id=${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function getAiEvaluation(userId: number) {
+  const res = await fetch(`${BASE}/report/ai-evaluation?user_id=${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
