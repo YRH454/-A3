@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { BarChart3, Film } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-/** AI 生成的 HTML 可视化页面：用 iframe 沙盒渲染 */
+/** AI 生成的 HTML 可视化页面：用 iframe 渲染 */
 function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean }) {
   const [showSource, setShowSource] = useState(false)
-  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // 流式输出中不渲染 iframe，避免闪烁
   if (streaming) {
@@ -23,15 +24,25 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
     )
   }
 
-  // 用 Blob URL 替代 srcDoc，解决 sandbox 渲染空白问题
-  const blobUrl = useMemo(() => {
-    const blob = new Blob([code], { type: 'text/html;charset=utf-8' })
-    return URL.createObjectURL(blob)
-  }, [code])
-
+  // 直接写入 iframe document，最可靠的方案
   useEffect(() => {
-    return () => URL.revokeObjectURL(blobUrl)
-  }, [blobUrl])
+    const iframe = iframeRef.current
+    if (!iframe || !code) return
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document
+      if (doc) {
+        doc.open()
+        doc.write(code)
+        doc.close()
+        setLoaded(true)
+      }
+    } catch (e) {
+      console.error('[HtmlPreview] write failed:', e)
+      // fallback: try srcdoc
+      iframe.srcdoc = code
+      setLoaded(true)
+    }
+  }, [code])
 
   return (
     <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
@@ -43,17 +54,16 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
         </button>
       </div>
       <div style={{ position: 'relative', minHeight: 800 }}>
-        {!iframeLoaded && (
+        {!loaded && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fdfbf9', zIndex: 1 }}>
             <div style={{ width: 40, height: 40, border: '3px solid #eee', borderTopColor: '#D4845A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             <div style={{ marginTop: 12, fontSize: 13, color: '#999' }}>正在渲染可视化图表...</div>
           </div>
         )}
         <iframe
-          src={blobUrl}
+          ref={iframeRef}
           style={{ width: '100%', height: 800, border: 'none', display: 'block' }}
           title="AI 图解"
-          onLoad={() => setIframeLoaded(true)}
         />
       </div>
       {showSource && (
