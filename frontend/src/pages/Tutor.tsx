@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { useTutorStore, QAItem } from '../stores/tutorStore'
+import { useTutorStore } from '../stores/tutorStore'
+import type { QAItem } from '../stores/tutorStore'
 import { getTutorSessions, newTutorSession, getTutorHistory, streamTutorChat, sendTutorFeedback, checkTutorProfile } from '../services/api'
 import MarkdownRenderer from '../components/MarkdownRenderer'
 import './Pages.css'
