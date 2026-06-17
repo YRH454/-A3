@@ -147,3 +147,55 @@ export async function listResourcePackages(userId: number) {
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
+
+// ---- Tutor (智能辅导) ----
+
+export async function getTutorSessions(userId: number) {
+  const res = await fetch(`${BASE}/tutor/sessions?user_id=${userId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function newTutorSession(userId: number) {
+  const res = await fetch(`${BASE}/tutor/sessions/new?user_id=${userId}`, { method: 'POST' })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function getTutorHistory(userId: number, sessionId: number) {
+  const res = await fetch(`${BASE}/tutor/history?user_id=${userId}&session_id=${sessionId}`)
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+export async function sendTutorFeedback(sessionId: number, qaId: string, helpful: boolean, userId: number) {
+  const res = await fetch(`${BASE}/tutor/feedback`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, session_id: sessionId, qa_id: qaId, helpful }),
+  })
+  return res.json()
+}
+
+export async function checkTutorProfile(userId: number) {
+  const res = await fetch(`${BASE}/tutor/profile-status?user_id=${userId}`)
+  if (!res.ok) return { has_profile: false }
+  return res.json()
+}
+
+/** 流式辅导对话 — 返回 fetch Response 供 ReadableStream 消费 */
+export async function streamTutorChat(
+  userId: number, sessionId: number | null,
+  message: string, mode: string, parentId?: string,
+): Promise<Response> {
+  return fetch(`${BASE}/tutor/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      session_id: sessionId,
+      message,
+      mode,
+      parent_id: parentId || null,
+    }),
+  })
+}

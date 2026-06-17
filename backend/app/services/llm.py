@@ -51,6 +51,15 @@ def chat_deepseek(messages: list, temperature=0.3, max_tokens=4096, json_mode=Fa
     return deepseek.chat.completions.create(**kwargs)
 
 
+def chat_deepseek_stream(messages: list, temperature=0.5, max_tokens=4096):
+    """流式调用 DeepSeek"""
+    return deepseek.chat.completions.create(
+        model=DEEPSEEK_MODEL, messages=messages,
+        temperature=temperature, max_tokens=max_tokens,
+        stream=True,
+    )
+
+
 def generate_glm_image(prompt: str, size: str = "1280x1280") -> str | None:
     """智谱 GLM-Image 生成画像插图"""
     import os, json, time
