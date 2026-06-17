@@ -159,7 +159,9 @@ def get_ai_evaluation(user_id: int):
 - 建议组合多种图表：环形进度圈（总评分）+ 水平能力条（各维度对比）+ 数字动画跳动
 - 必须有丰富的交互效果：hover放大/变色/弹出详情、点击展开、数字增长动画、进度条填充动画
 - CSS动画：entry动画（从0增长到目标值）、hover缩放、脉冲发光效果
-- 自适应宽度，高度500-700px
+- 页面必须铺满整个容器！html和body设置 width:100%; min-height:800px; margin:0; padding:20px; box-sizing:border-box
+- 内容要充实饱满，不要留大片空白，合理利用空间布局
+- 自适应宽度，高度至少800px
 - 中文标注，字体用 system-ui
 - 不要外部CDN，一切自包含
 - 代码要完整，不要省略"""

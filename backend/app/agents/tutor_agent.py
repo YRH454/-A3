@@ -28,7 +28,9 @@ MODE_PROMPTS = {
    - 配色方案：主色#D4845A（暖橙），辅色#8E6EB4（紫）#4A7C6B（青绿）#5B8C7B（浅绿）#DEB040（金），背景#fdfbf9
    - 用SVG图形、CSS动画、或Canvas绘制精美的知识图解
    - 必须有交互效果（hover高亮、点击展开详情、动画过渡等）
-   - 自适应宽度（width:100%），高度400-600px
+   - 页面必须铺满容器！html和body设置 width:100%; min-height:800px; margin:0; padding:20px; box-sizing:border-box
+   - 内容充实饱满，不要留大片空白
+   - 自适应宽度
    - 所有文字用中文标注
    - 不要引用任何外部CDN或资源链接，一切自包含
    - 字体使用 system-ui, -apple-system, sans-serif

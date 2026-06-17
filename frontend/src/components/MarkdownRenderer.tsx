@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { BarChart3, Film } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -23,6 +23,16 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
     )
   }
 
+  // 用 Blob URL 替代 srcDoc，解决 sandbox 渲染空白问题
+  const blobUrl = useMemo(() => {
+    const blob = new Blob([code], { type: 'text/html;charset=utf-8' })
+    return URL.createObjectURL(blob)
+  }, [code])
+
+  useEffect(() => {
+    return () => URL.revokeObjectURL(blobUrl)
+  }, [blobUrl])
+
   return (
     <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
       <div style={{ padding: '6px 12px', background: '#f8f6f4', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -32,8 +42,7 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           {showSource ? '隐藏源码' : '查看源码'}
         </button>
       </div>
-      <div style={{ position: 'relative', minHeight: 650 }}>
-        {/* Loading overlay */}
+      <div style={{ position: 'relative', minHeight: 800 }}>
         {!iframeLoaded && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fdfbf9', zIndex: 1 }}>
             <div style={{ width: 40, height: 40, border: '3px solid #eee', borderTopColor: '#D4845A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -41,9 +50,8 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           </div>
         )}
         <iframe
-          srcDoc={code}
-          sandbox="allow-scripts allow-same-origin allow-popups allow-modals"
-          style={{ width: '100%', height: 650, border: 'none', display: 'block' }}
+          src={blobUrl}
+          style={{ width: '100%', height: 800, border: 'none', display: 'block' }}
           title="AI 图解"
           onLoad={() => setIframeLoaded(true)}
         />
