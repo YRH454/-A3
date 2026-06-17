@@ -24,10 +24,13 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
     )
   }
 
-  // 直接写入 iframe document，最可靠的方案
+  // 直接写入 iframe document
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe || !code) return
+    // 调试：打印内容
+    console.log('[HtmlPreview] code length:', code.length, 'starts with:', code.slice(0, 80))
+    console.log('[HtmlPreview] has <html>:', code.includes('<html'), 'has <body>:', code.includes('<body'), 'has &lt;:', code.includes('&lt;'))
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document
       if (doc) {
@@ -38,9 +41,6 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
       }
     } catch (e) {
       console.error('[HtmlPreview] write failed:', e)
-      // fallback: try srcdoc
-      iframe.srcdoc = code
-      setLoaded(true)
     }
   }, [code])
 
@@ -54,6 +54,10 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
         </button>
       </div>
       <div style={{ position: 'relative', minHeight: 800 }}>
+        {/* Debug info — 临时调试 */}
+        <div style={{ padding: '4px 8px', background: '#fff3cd', fontSize: 11, color: '#856404', borderBottom: '1px solid #ffc107' }}>
+          DEBUG: code.length={code.length} | starts="{code.slice(0, 50).replace(/</g, '&lt;')}" | has&lt;html&gt;={String(code.includes('<html'))} | has&amp;lt;={String(code.includes('&lt;'))}
+        </div>
         {!loaded && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fdfbf9', zIndex: 1 }}>
             <div style={{ width: 40, height: 40, border: '3px solid #eee', borderTopColor: '#D4845A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
