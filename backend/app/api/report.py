@@ -124,7 +124,7 @@ def get_ai_evaluation(user_id: int):
     radar_text = "\n".join(f"- {l}: {v}/10" for l, v in zip(summary["radar"]["labels"], summary["radar"]["values"]) if v > 0)
     stats = summary["stats"]
 
-    prompt = f"""你是学习评估专家。根据以下学生数据生成一份简洁的学习评估报告。
+    prompt = f"""你是学习评估专家+数据可视化设计师。根据以下学生数据生成一份评估报告，包含文字分析和一个交互式HTML可视化图表。
 
 ## 学生画像
 {profile_text}
@@ -141,7 +141,7 @@ def get_ai_evaluation(user_id: int):
 ## 最近提问
 {chr(10).join(f'- {q}' for q in summary['recent_questions']) if summary['recent_questions'] else '暂无'}
 
-请输出以下内容（Markdown格式，不要代码块）：
+请按以下结构输出（Markdown格式）：
 
 ### 总体评价
 2-3句话概括学习状态
@@ -152,14 +152,20 @@ def get_ai_evaluation(user_id: int):
 ### 需要加强
 列出2-3个薄弱的方面
 
-### 改进建议
-3条具体可执行的建议
-
-### 下一步行动
-最推荐的1件事"""
+然后生成一个HTML可视化页面，用 ```html 代码块包裹。要求：
+- 完整HTML（<!DOCTYPE html>），CSS和JS内嵌
+- 配色：主色#D4845A 辅色#8E6EB4 #4A7C6B，背景#fdfbf9
+- 视觉冲击力要强！用SVG+CSS动画绘制一个炫酷的学习能力仪表盘
+- 建议组合多种图表：环形进度圈（总评分）+ 水平能力条（各维度对比）+ 数字动画跳动
+- 必须有丰富的交互效果：hover放大/变色/弹出详情、点击展开、数字增长动画、进度条填充动画
+- CSS动画：entry动画（从0增长到目标值）、hover缩放、脉冲发光效果
+- 自适应宽度，高度500-700px
+- 中文标注，字体用 system-ui
+- 不要外部CDN，一切自包含
+- 代码要完整，不要省略"""
 
     try:
-        resp = chat_deepseek([{"role": "system", "content": prompt}], temperature=0.6, max_tokens=1500)
+        resp = chat_deepseek([{"role": "system", "content": prompt}], temperature=0.7, max_tokens=8192)
         evaluation = resp.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"AI评估生成失败: {e}")
