@@ -4,14 +4,15 @@ import { useTutorStore } from '../stores/tutorStore'
 import type { QAItem } from '../stores/tutorStore'
 import { getTutorSessions, newTutorSession, getTutorHistory, streamTutorChat, sendTutorFeedback, checkTutorProfile } from '../services/api'
 import MarkdownRenderer from '../components/MarkdownRenderer'
+import { FileText, BarChart3, Video, Code, GraduationCap, MessageSquare, Link2, ThumbsUp, ThumbsDown, Lightbulb, Target, Square, Loader2, Send } from 'lucide-react'
 import './Pages.css'
 
 const MODE_TABS = [
-  { key: 'text', icon: '📝', label: '文字解答' },
-  { key: 'diagram', icon: '📊', label: '图解说明' },
-  { key: 'video', icon: '🎬', label: '视频讲解' },
-  { key: 'code', icon: '💻', label: '代码示例' },
-] as const
+  { key: 'text', icon: <FileText size={16} />, label: '文字解答' },
+  { key: 'diagram', icon: <BarChart3 size={16} />, label: '图解说明' },
+  { key: 'video', icon: <Video size={16} />, label: '视频讲解' },
+  { key: 'code', icon: <Code size={16} />, label: '代码示例' },
+]
 
 const QUICK_QUESTIONS = [
   '什么是梯度下降？用简单的例子解释',
@@ -210,7 +211,7 @@ export default function Tutor() {
       {!sideCollapsed ? (
         <div style={{ width: 240, flexShrink: 0, background: '#fafafa', borderRight: '2px solid #e0e0e0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '12px 14px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <b style={{ fontSize: 14 }}>💬 辅导对话</b>
+            <b style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}><MessageSquare size={14} /> 辅导对话</b>
             <button onClick={() => setSideCollapsed(true)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, color: '#999' }}>◀</button>
           </div>
           <button onClick={handleNewSession} style={{ margin: '8px 12px', padding: '8px', border: '1px dashed #8E6EB4', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 13, color: '#8E6EB4' }}>+ 新对话</button>
@@ -231,7 +232,7 @@ export default function Tutor() {
 
           {/* Quick questions */}
           <div style={{ borderTop: '1px solid #eee', padding: '8px', maxHeight: 200, overflow: 'auto' }}>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 6, paddingLeft: 4 }}>💡 快捷问题</div>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 6, paddingLeft: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Lightbulb size={12} /> 快捷问题</div>
             {QUICK_QUESTIONS.map((q, i) => (
               <button key={i} onClick={() => handleSend(q)} disabled={isGenerating}
                 style={{ display: 'block', width: '100%', textAlign: 'left', padding: '5px 8px', marginBottom: 3, border: '1px solid #eee', borderRadius: 4, background: '#fff', cursor: isGenerating ? 'not-allowed' : 'pointer', fontSize: 12, color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -263,10 +264,10 @@ export default function Tutor() {
             </button>
           ))}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-            {hasProfile && <span style={{ fontSize: 11, color: '#8E6EB4', background: '#f3e8ff', padding: '2px 8px', borderRadius: 10 }}>🎯 已关联画像</span>}
+            {hasProfile && <span style={{ fontSize: 11, color: '#8E6EB4', background: '#f3e8ff', padding: '2px 8px', borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Target size={12} /> 已关联画像</span>}
             {followUpParent && (
               <span style={{ fontSize: 11, color: '#D4845A', background: '#fef3e8', padding: '2px 8px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
-                🔗 追问模式
+                <Link2 size={12} /> 追问模式
                 <button onClick={() => setFollowUpParent(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: '#D4845A', padding: 0 }}>✕</button>
               </span>
             )}
@@ -277,7 +278,7 @@ export default function Tutor() {
         <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
           {qaList.length === 0 && !currentAnswer && !isGenerating && (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🎓</div>
+              <div style={{ fontSize: 48, marginBottom: 12, display: 'flex', justifyContent: 'center' }}><GraduationCap size={36} /></div>
               <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8, color: '#333' }}>智能辅导</h2>
               <p style={{ color: '#888', fontSize: 14, maxWidth: 400, margin: '0 auto' }}>
                 遇到学习问题？输入你的问题，AI导师为你提供即时解答。<br />
@@ -291,7 +292,7 @@ export default function Tutor() {
               {/* User question */}
               <div style={{ display: 'flex', gap: 10, marginBottom: 8, justifyContent: 'flex-end' }}>
                 <div style={{ background: '#f3e8ff', padding: '8px 14px', borderRadius: '12px 12px 2px 12px', fontSize: 14, color: '#333', maxWidth: '75%' }}>
-                  {qa.parentId && <span style={{ fontSize: 11, color: '#8E6EB4', marginRight: 4 }}>🔗追问</span>}
+                  {qa.parentId && <span style={{ fontSize: 11, color: '#8E6EB4', marginRight: 4, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Link2 size={12} />追问</span>}
                   {qa.question}
                 </div>
                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#8E6EB4', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0 }}>你</div>
@@ -302,9 +303,9 @@ export default function Tutor() {
                 <div style={{ background: '#fff', border: '1px solid #eee', padding: '12px 16px', borderRadius: '2px 12px 12px 12px', fontSize: 14, maxWidth: '85%', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                   <MarkdownRenderer content={qa.answer} />
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
-                    <button onClick={() => handleFeedback(qa, true)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: qa.helpful === true ? '#1890ff' : '#bbb' }}>👍</button>
-                    <button onClick={() => handleFeedback(qa, false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: qa.helpful === false ? '#f5222d' : '#bbb' }}>👎</button>
-                    <button onClick={() => handleFollowUp(qa)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: '#8E6EB4' }}>💬 追问</button>
+                    <button onClick={() => handleFeedback(qa, true)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: qa.helpful === true ? '#1890ff' : '#bbb', display: 'inline-flex', alignItems: 'center' }}><ThumbsUp size={14} /></button>
+                    <button onClick={() => handleFeedback(qa, false)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: qa.helpful === false ? '#f5222d' : '#bbb', display: 'inline-flex', alignItems: 'center' }}><ThumbsDown size={14} /></button>
+                    <button onClick={() => handleFollowUp(qa)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: '#8E6EB4', display: 'inline-flex', alignItems: 'center', gap: 2 }}><MessageSquare size={14} /> 追问</button>
                     <span style={{ fontSize: 11, color: '#ccc', marginLeft: 'auto' }}>#{qa.mode}</span>
                   </div>
                 </div>
@@ -331,7 +332,7 @@ export default function Tutor() {
                     </>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#999', padding: '8px 0' }}>
-                      <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                       AI正在思考...
                     </div>
                   )}
@@ -345,7 +346,7 @@ export default function Tutor() {
         <div style={{ padding: '12px 16px', borderTop: '1px solid #eee', background: '#fff' }}>
           {followUpParent && (
             <div style={{ fontSize: 12, color: '#8E6EB4', marginBottom: 6, padding: '4px 8px', background: '#f3e8ff', borderRadius: 6, display: 'flex', justifyContent: 'space-between' }}>
-              <span>🔗 追问「{followUpParent.question.slice(0, 40)}...」</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Link2 size={12} /> 追问「{followUpParent.question.slice(0, 40)}...」</span>
               <button onClick={() => setFollowUpParent(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8E6EB4', fontSize: 12 }}>取消</button>
             </div>
           )}
@@ -361,9 +362,9 @@ export default function Tutor() {
               style={{ flex: 1, padding: '10px 14px', border: '1px solid #ddd', borderRadius: 12, fontSize: 14, resize: 'none', outline: 'none', fontFamily: 'inherit', minHeight: 42, maxHeight: 120 }}
             />
             {isGenerating ? (
-              <button onClick={handleCancel} style={{ padding: '0 20px', border: 'none', borderRadius: 12, background: '#ff4d4f', color: '#fff', fontSize: 14, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>⏹ 取消</button>
+              <button onClick={handleCancel} style={{ padding: '0 20px', border: 'none', borderRadius: 12, background: '#ff4d4f', color: '#fff', fontSize: 14, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Square size={14} /> 取消</button>
             ) : (
-              <button onClick={() => handleSend()} disabled={!input.trim()} style={{ padding: '0 20px', border: 'none', borderRadius: 12, background: input.trim() ? '#8E6EB4' : '#ddd', color: '#fff', fontSize: 14, cursor: input.trim() ? 'pointer' : 'not-allowed', fontWeight: 600, whiteSpace: 'nowrap' }}>发送 ↑</button>
+              <button onClick={() => handleSend()} disabled={!input.trim()} style={{ padding: '0 20px', border: 'none', borderRadius: 12, background: input.trim() ? '#8E6EB4' : '#ddd', color: '#fff', fontSize: 14, cursor: input.trim() ? 'pointer' : 'not-allowed', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}><Send size={16} /></button>
             )}
           </div>
         </div>

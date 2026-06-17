@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import './ProfileGenerating.css'
 
 const stages = [
-  { label: '分析知识基础', icon: '📖' },
-  { label: '评估学习风格', icon: '🧠' },
-  { label: '梳理兴趣方向', icon: '💡' },
-  { label: '明确学习目标', icon: '🎯' },
-  { label: 'DeepSeek 生成文字报告', icon: '📝' },
-  { label: '千问 + GLM 设计可视化', icon: '✨' },
+  { label: '分析知识基础', step: 1 },
+  { label: '评估学习风格', step: 2 },
+  { label: '梳理兴趣方向', step: 3 },
+  { label: '明确学习目标', step: 4 },
+  { label: 'DeepSeek 生成文字报告', step: 5 },
+  { label: '千问 + GLM 设计可视化', step: 6 },
 ]
 
 export default function ProfileGenerating() {
@@ -57,7 +57,7 @@ export default function ProfileGenerating() {
 
         {/* Stage text */}
         <div className="pg-stage-text" key={stage}>
-          {stages[stage]?.icon} {stages[stage]?.label || '即将完成'}
+          {stages[stage]?.step ? `Stage ${stages[stage].step}/6` : ''} · {stages[stage]?.label || '即将完成'}
         </div>
         <div className="pg-sub-text">
           DeepSeek · 千问 · GLM · 多模型协同

@@ -6,7 +6,7 @@ import {
 import {
   DashboardOutlined, RiseOutlined, FallOutlined, MinusOutlined,
   TrophyOutlined, FireOutlined, ClockCircleOutlined,
-  CheckCircleOutlined, RocketOutlined, BarChartOutlined,
+  CheckCircleOutlined, RocketOutlined, BarChartOutlined, RobotOutlined,
 } from '@ant-design/icons'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'
 import { useAuthStore } from '../stores/authStore'
@@ -128,7 +128,7 @@ export default function Report() {
 
   return (
     <div className="page-container" style={{ padding: 24, overflow: 'auto', height: '100%' }}>
-      <Title level={2}>📊 学习效果评估</Title>
+      <Title level={2}><BarChartOutlined /> 学习效果评估</Title>
       <Text type="secondary">多维度精准评估学习效果，数据驱动持续优化</Text>
 
       {/* 无画像引导 */}
@@ -269,7 +269,7 @@ export default function Report() {
       </Card>
 
       {/* ===== AI 深度评估（我们独有，竞品没有） ===== */}
-      <Card title="🤖 AI 深度评估" style={{ marginTop: 24 }}
+      <Card title={<span><RobotOutlined /> AI 深度评估</span>} style={{ marginTop: 24 }}
         extra={!aiEval && <Button type="primary" onClick={handleAiEval} loading={aiLoading}
           style={{ background: '#D4845A', borderColor: '#D4845A' }}>生成 AI 评估报告</Button>}>
         {aiLoading && <div style={{ textAlign: 'center', padding: 40 }}><Spin size="large" /><br /><Text type="secondary">DeepSeek 正在分析你的学习数据...</Text></div>}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAuthStore } from '../stores/authStore'
 import * as echarts from 'echarts'
+import { ClipboardList, BarChart3, Target, TrendingUp, Zap, Sprout, BookOpen, Map, Tags, Palette } from 'lucide-react'
 
 const DIM_KEYS = ['knowledge_base', 'learning_style', 'weak_points', 'interests', 'goals', 'learning_pace', 'interaction_pref']
 const DIM_LABELS: Record<string, string> = {
@@ -168,10 +169,10 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
 
   const decorateReport = (text: string) => {
     return text
-      .replace(/### 学习画像总览/g, '<h3>🌟 学习画像总览</h3>')
-      .replace(/### 多维分析/g, '<h3>🔍 多维分析</h3>')
-      .replace(/### 个性化学习建议/g, '<h3>📌 个性化学习建议</h3>')
-      .replace(/### 推荐学习资源/g, '<h3>🎯 推荐学习资源</h3>')
+      .replace(/### 学习画像总览/g, '<h3>学习画像总览</h3>')
+      .replace(/### 多维分析/g, '<h3>多维分析</h3>')
+      .replace(/### 个性化学习建议/g, '<h3>个性化学习建议</h3>')
+      .replace(/### 推荐学习资源/g, '<h3>推荐学习资源</h3>')
       .replace(/### (.+)/g, '<h3>$1</h3>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n\n/g, '<br/><br/>')
@@ -184,7 +185,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         <button onClick={onClose} style={{ position: 'sticky', top: 8, left: 8, zIndex: 10, padding: '6px 14px', border: 'none', borderRadius: 8, background: '#333', color: '#fff', cursor: 'pointer', fontSize: 13 }}>← 返回对话</button>
       )}
       <div className="pr-header">
-        <h2>📋 学习画像报告</h2>
+        <h2><ClipboardList size={20} style={{marginRight:6, display:'inline-block', verticalAlign:'text-bottom'}} /> 学习画像报告</h2>
         <div className="pr-badge">{card_title}</div>
         {atmosphere && <p className="pr-atmo">{atmosphere}</p>}
       </div>
@@ -198,7 +199,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         ) : genLoading ? (
           <div style={{ padding: '16px 0', textAlign: 'center' }}>
             <div style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
-              🎨 AI 正在根据你的画像数据生成视觉插图...
+              <Palette size={14} style={{marginRight:4}} /> AI 正在根据你的画像数据生成视觉插图...
             </div>
             <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', height: 6, background: '#eee', borderRadius: 3, overflow: 'hidden' }}>
               <div style={{
@@ -213,14 +214,14 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
           </div>
         ) : (
           <button className="pr-gen-btn" onClick={handleGenImage}>
-            🎨 生成AI画像插图
+            <Palette size={14} style={{marginRight:4}} /> 生成AI画像插图
           </button>
         )}
       </div>
 
       {/* 能力维度柱状图 */}
       <div className="pr-chart-section" style={{ marginBottom: 24 }}>
-        <h3>📊 能力维度评分</h3>
+        <h3><BarChart3 size={18} style={{marginRight:6}} /> 能力维度评分</h3>
         <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>各维度独立评分，越高越突出</p>
         <div ref={bar3dRef} style={{ width: '100%', height: 420 }} />
       </div>
@@ -228,12 +229,12 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
       {/* 2D 雷达图 */}
       <div className="pr-body">
         <div className="pr-chart-section">
-          <h3>🎯 多维雷达图</h3>
+          <h3><Target size={18} style={{marginRight:6}} /> 多维雷达图</h3>
           <div ref={radarRef} style={{ width: '100%', height: 400 }} />
         </div>
 
         <div className="pr-detail-section">
-          <h3>📈 维度详情</h3>
+          <h3><TrendingUp size={18} style={{marginRight:6}} /> 维度详情</h3>
           {DIM_KEYS.map((key, i) => (
             <div key={key} className="pr-dim-row">
               <span className="pr-dim-label">{DIM_LABELS[key]}</span>
@@ -254,13 +255,13 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
         <div className="pr-insights">
           {strengths.length > 0 && (
             <div className="pr-insight-col">
-              <h4>💪 优势</h4>
+              <h4><Zap size={16} style={{marginRight:4}} /> 优势</h4>
               {strengths.map((s: string, i: number) => <div key={i} className="pr-chip str">{s}</div>)}
             </div>
           )}
           {growth_areas.length > 0 && (
             <div className="pr-insight-col">
-              <h4>🌱 成长方向</h4>
+              <h4><Sprout size={16} style={{marginRight:4}} /> 成长方向</h4>
               {growth_areas.map((g: string, i: number) => <div key={i} className="pr-chip grow">{g}</div>)}
             </div>
           )}
@@ -280,7 +281,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
 
       {visual.resources?.length > 0 && (
         <div className="pr-resources">
-          <h3>📚 推荐学习资源</h3>
+          <h3><BookOpen size={18} style={{marginRight:6}} /> 推荐学习资源</h3>
           <div className="pr-resource-grid">
             {visual.resources.map((r: any, i: number) => (
               <div key={i} className="pr-resource-card">
@@ -296,7 +297,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
 
       {visual.roadmap?.length > 0 && (
         <div className="pr-roadmap">
-          <h3>🗺️ 学习路线建议</h3>
+          <h3><Map size={18} style={{marginRight:6}} /> 学习路线建议</h3>
           <div className="pr-roadmap-steps">
             {visual.roadmap.map((s: any, i: number) => (
               <div key={i} className="pr-step">
@@ -304,7 +305,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
                 <div className="pr-step-content">
                   <div className="pr-step-title">{s.title}</div>
                   <div className="pr-step-meta">{s.duration} · {s.focus}</div>
-                  <div className="pr-step-mile">🎯 {s.milestone}</div>
+                  <div className="pr-step-mile"><Target size={14} style={{marginRight:4}} /> {s.milestone}</div>
                 </div>
               </div>
             ))}
@@ -314,7 +315,7 @@ export default function ProfileReport({ onClose }: { onClose?: () => void }) {
 
       {visual.tags?.length > 0 && (
         <div className="pr-tags-section">
-          <h3>🏷️ 学习者标签</h3>
+          <h3><Tags size={18} style={{marginRight:6}} /> 学习者标签</h3>
           <div className="pr-tags-cloud">
             {visual.tags.map((t: string, i: number) => (
               <span key={i} className="pr-tag">{t}</span>

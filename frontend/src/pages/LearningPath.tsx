@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Compass, ClipboardList, Bot, Package, CheckCircle, Clock, Pause } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { getProfileSessions, newProfileSession } from '../services/api'
 import './Pages.css'
@@ -61,7 +62,7 @@ export default function LearningPath() {
     <div className="page-container" style={{ padding: 24, overflow: 'auto', height: '100%' }}>
       {stage === 'input' && (
         <div style={{ maxWidth: 600, margin: '60px auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 24, marginBottom: 8 }}>🧭 智能学习路径生成</h2>
+          <h2 style={{ fontSize: 24, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><Compass size={20} /> 智能学习路径生成</h2>
           <p style={{ color: '#888', marginBottom: 24 }}>输入你想学的内容，AI 专家团队为你生成全套学习资料</p>
           <textarea value={input} onChange={e => setInput(e.target.value)}
             placeholder='例如：系统学习 Node.js 分布式系统架构'
@@ -79,7 +80,7 @@ export default function LearningPath() {
         <div>
           {/* Plan summary */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 20, border: '1px solid #eee' }}>
-            <h3 style={{ margin: '0 0 8px' }}>📋 学习计划</h3>
+            <h3 style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={16} /> 学习计划</h3>
             <p style={{ color: '#666', margin: 0 }}>{plan.summary}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               {plan.needs?.topics?.map((t: string, i: number) => (
@@ -90,7 +91,7 @@ export default function LearningPath() {
 
           {/* Expert team */}
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ marginBottom: 12 }}>🤖 AI 专家团队 ({done.length}/{totalAgents})</h3>
+            <h3 style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Bot size={16} /> AI 专家团队 ({done.length}/{totalAgents})</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
               {agentNames.map((key: string) => {
                 const info = agents[key]
@@ -101,8 +102,8 @@ export default function LearningPath() {
                     borderLeft: `3px solid ${color}`, transition: 'all 0.3s' }}>
                     <div style={{ fontSize: 20, marginBottom: 4 }}>{icon}</div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{info?.label || key}</div>
-                    <div style={{ fontSize: 11, color: info?.status === 'done' ? color : '#999', marginTop: 4 }}>
-                      {info?.status === 'done' ? '✅ 已完成' : info?.status === 'running' ? '⏳ 生成中...' : '⏸ 等待'}
+                    <div style={{ fontSize: 11, color: info?.status === 'done' ? color : '#999', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {info?.status === 'done' ? <><CheckCircle size={14} /> 已完成</> : info?.status === 'running' ? <><Clock size={14} /> 生成中...</> : <><Pause size={12} /> 等待</>}
                     </div>
                   </div>
                 )
@@ -113,7 +114,7 @@ export default function LearningPath() {
           {/* Generated Resources */}
           {stage === 'done' && (
             <div>
-              <h3 style={{ marginBottom: 12 }}>📦 生成的学习资源</h3>
+              <h3 style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Package size={14} /> 生成的学习资源</h3>
               {Object.entries(agents).map(([key, info]: [string, any]) => {
                 if (info.status !== 'done' || !info.content) return null
                 return (
@@ -130,7 +131,7 @@ export default function LearningPath() {
                 )
               })}
               <div style={{ textAlign: 'center', marginTop: 20, color: '#5B8C7B', fontSize: 13 }}>
-                ✅ 所有资源已保存到资源库（包 #{packageId}）
+                <CheckCircle size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />所有资源已保存到资源库（包 #{packageId}）
               </div>
             </div>
           )}

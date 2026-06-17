@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCircle, MessageCircle } from 'lucide-react'
 import { useChatStore, DIM_LABELS } from '../stores/chatStore'
 
 const DIM_ORDER = [
@@ -53,8 +54,8 @@ export default function ProfilePanel() {
               key={key}
               className={`profile-dim-card${isFilled ? ' filled' : ''}${isCurrent ? ' current' : ''}`}
             >
-              <div className="profile-dim-label">
-                {isFilled ? '✅ ' : isCurrent ? '💬 ' : ''}
+              <div className="profile-dim-label" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {isFilled ? <><CheckCircle size={12} />{' '}</> : isCurrent ? <><MessageCircle size={12} />{' '}</> : ''}
                 {DIM_LABELS[key]}
                 {isCurrent && ' ← 正在了解'}
               </div>
