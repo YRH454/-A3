@@ -177,5 +177,5 @@ def build_tutor_messages(
 
 def stream_tutor_answer(messages: list, mode: str = "text"):
     """流式生成辅导回答，图解模式给更多token"""
-    max_tok = 8192 if mode == "diagram" else 6144
+    max_tok = 16384 if mode == "diagram" else 8192
     return chat_deepseek_stream(messages, temperature=0.5, max_tokens=max_tok)

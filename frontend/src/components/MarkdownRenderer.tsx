@@ -1,42 +1,61 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BarChart3, Film } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-/** AI 生成的 HTML 可视化页面：用 iframe 渲染 */
+/** AI 生成的 HTML 可视化页面 */
 function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean }) {
   const [showSource, setShowSource] = useState(false)
+  const [blobUrl, setBlobUrl] = useState('')
 
-  // 流式输出中不渲染 iframe，避免闪烁
+  // 创建 Blob URL
+  useEffect(() => {
+    if (!code) return
+    const blob = new Blob([code], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    setBlobUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [code])
+
+  // 在新标签页打开（备用方案）
+  const openInNewTab = () => {
+    const win = window.open('', '_blank')
+    if (win) { win.document.write(code); win.document.close() }
+  }
+
   if (streaming) {
     return (
       <div style={{ margin: '12px 0', borderRadius: 10, border: '1px dashed #D4845A', padding: 16, background: '#fdfbf9', textAlign: 'center' }}>
         <div style={{ fontSize: 13, color: '#D4845A', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><BarChart3 size={14} /> AI 正在生成交互式图解...</div>
         <div style={{ fontSize: 12, color: '#999' }}>生成完成后自动渲染可视化页面</div>
-        <div style={{ marginTop: 10, fontSize: 11, color: '#ccc', maxHeight: 80, overflow: 'hidden', textAlign: 'left', fontFamily: 'monospace' }}>
-          {code.slice(0, 200)}...
-        </div>
       </div>
     )
   }
 
-  // 直接用 srcdoc，不加 sandbox，不用 ref/useEffect
   return (
     <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
       <div style={{ padding: '6px 12px', background: '#f8f6f4', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 13, fontWeight: 500, color: '#555', display: 'flex', alignItems: 'center', gap: 4 }}><BarChart3 size={14} /> AI 生成的交互式图解</span>
-        <button onClick={() => setShowSource(!showSource)}
-          style={{ border: '1px solid #ddd', borderRadius: 4, background: '#fff', cursor: 'pointer', fontSize: 11, padding: '2px 8px', color: '#888' }}>
-          {showSource ? '隐藏源码' : '查看源码'}
-        </button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={openInNewTab}
+            style={{ border: '1px solid #D4845A', borderRadius: 4, background: '#fff', cursor: 'pointer', fontSize: 11, padding: '2px 8px', color: '#D4845A' }}>
+            ↗ 新标签页打开
+          </button>
+          <button onClick={() => setShowSource(!showSource)}
+            style={{ border: '1px solid #ddd', borderRadius: 4, background: '#fff', cursor: 'pointer', fontSize: 11, padding: '2px 8px', color: '#888' }}>
+            {showSource ? '隐藏源码' : '查看源码'}
+          </button>
+        </div>
       </div>
-      <iframe
-        srcDoc={code}
-        style={{ width: '100%', height: 800, border: 'none', display: 'block', background: '#fdfbf9' }}
-        title="AI 图解"
-      />
+      {blobUrl && (
+        <iframe
+          src={blobUrl}
+          style={{ width: '100%', height: 800, border: 'none', display: 'block', background: '#fdfbf9' }}
+          title="AI 图解"
+        />
+      )}
       {showSource && (
         <div style={{ borderTop: '1px solid #eee' }}>
           <SyntaxHighlighter style={oneDark} language="html" PreTag="div"

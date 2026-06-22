@@ -167,8 +167,13 @@ def get_ai_evaluation(user_id: int):
 - 代码要完整，不要省略"""
 
     try:
-        resp = chat_deepseek([{"role": "system", "content": prompt}], temperature=0.7, max_tokens=8192)
+        resp = chat_deepseek([{"role": "system", "content": prompt}], temperature=0.7, max_tokens=16384)
         evaluation = resp.choices[0].message.content.strip()
+        # 修复被截断的 HTML 代码块：补上闭合标签
+        if '```html' in evaluation and evaluation.count('```') % 2 != 0:
+            if '</html>' not in evaluation:
+                evaluation += '\n</script></body></html>'
+            evaluation += '\n```'
     except Exception as e:
         logger.error(f"AI评估生成失败: {e}")
         evaluation = "AI 评估暂时不可用，请稍后再试。"
