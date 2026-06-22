@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState } from 'react'
 import { BarChart3, Film } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -8,8 +8,6 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 /** AI 生成的 HTML 可视化页面：用 iframe 渲染 */
 function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean }) {
   const [showSource, setShowSource] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // 流式输出中不渲染 iframe，避免闪烁
   if (streaming) {
@@ -24,26 +22,7 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
     )
   }
 
-  // 直接写入 iframe document
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe || !code) return
-    // 调试：打印内容
-    console.log('[HtmlPreview] code length:', code.length, 'starts with:', code.slice(0, 80))
-    console.log('[HtmlPreview] has <html>:', code.includes('<html'), 'has <body>:', code.includes('<body'), 'has &lt;:', code.includes('&lt;'))
-    try {
-      const doc = iframe.contentDocument || iframe.contentWindow?.document
-      if (doc) {
-        doc.open()
-        doc.write(code)
-        doc.close()
-        setLoaded(true)
-      }
-    } catch (e) {
-      console.error('[HtmlPreview] write failed:', e)
-    }
-  }, [code])
-
+  // 直接用 srcdoc，不加 sandbox，不用 ref/useEffect
   return (
     <div style={{ margin: '12px 0', borderRadius: 10, border: '1px solid #e0e0e0', overflow: 'hidden', background: '#fff' }}>
       <div style={{ padding: '6px 12px', background: '#f8f6f4', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -53,23 +32,11 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           {showSource ? '隐藏源码' : '查看源码'}
         </button>
       </div>
-      <div style={{ position: 'relative', minHeight: 800 }}>
-        {/* Debug info — 临时调试 */}
-        <div style={{ padding: '4px 8px', background: '#fff3cd', fontSize: 11, color: '#856404', borderBottom: '1px solid #ffc107' }}>
-          DEBUG: code.length={code.length} | starts="{code.slice(0, 50).replace(/</g, '&lt;')}" | has&lt;html&gt;={String(code.includes('<html'))} | has&amp;lt;={String(code.includes('&lt;'))}
-        </div>
-        {!loaded && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fdfbf9', zIndex: 1 }}>
-            <div style={{ width: 40, height: 40, border: '3px solid #eee', borderTopColor: '#D4845A', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            <div style={{ marginTop: 12, fontSize: 13, color: '#999' }}>正在渲染可视化图表...</div>
-          </div>
-        )}
-        <iframe
-          ref={iframeRef}
-          style={{ width: '100%', height: 800, border: 'none', display: 'block' }}
-          title="AI 图解"
-        />
-      </div>
+      <iframe
+        srcDoc={code}
+        style={{ width: '100%', height: 800, border: 'none', display: 'block', background: '#fdfbf9' }}
+        title="AI 图解"
+      />
       {showSource && (
         <div style={{ borderTop: '1px solid #eee' }}>
           <SyntaxHighlighter style={oneDark} language="html" PreTag="div"
@@ -78,7 +45,6 @@ function HtmlPreview({ code, streaming }: { code: string; streaming?: boolean })
           </SyntaxHighlighter>
         </div>
       )}
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
