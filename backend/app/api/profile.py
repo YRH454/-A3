@@ -7,6 +7,7 @@ from app.agents.profile_agent import (
     DIMENSIONS_ORDER, PROFILE_DIMENSIONS,
     get_next_dimension, ask_dimension_question,
     extract_dimension_answer, generate_final_profile,
+    detect_garbage_input, get_extra_dimensions,
 )
 from app.services.profile_db import (
     get_profile, save_profile, get_chat_session, save_chat_session,
@@ -155,14 +156,32 @@ def profile_chat(req: ChatRequest):
             pass
         return {"reply": full["report"], "profile": full["profile"], "visual": full.get("visual"), "current_dim": None, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": True}
 
+    # P0-1: 垃圾输入检测
+    prev_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+    garbage = detect_garbage_input(req.message, prev_user_msg)
+    if garbage["suspicious"]:
+        # 垃圾输入：不提取维度，温和提醒重新输入
+        messages.append({"role": "user", "content": req.message})
+        reply = f"嗯，我没太理解你的意思（{garbage['reason']}）。能再详细说说关于「{dim['label']}」的情况吗？比如{dim['desc']}。"
+        messages.append({"role": "assistant", "content": reply})
+        try:
+            save_chat_session(req.user_id, messages, session_id=sid)
+        except Exception:
+            pass
+        return {"reply": reply, "profile": profile, "current_dim": {"key": dim["key"], "label": dim["label"]}, "filled": len(filled), "total": len(DIMENSIONS_ORDER), "done": False}
+
     messages.append({"role": "user", "content": req.message})
     cur_dim_key = dim["key"]
     extracted = extract_dimension_answer(cur_dim_key, dim["label"], messages, req.message)
     profile[cur_dim_key] = extracted or f"学生提到：{req.message[:80]}"
     filled.add(cur_dim_key)
-    # DEBUG: log
-    import builtins
-    builtins.print(f"[DEBUG] dim={cur_dim_key}, filled={filled}, profile_keys={list(profile.keys())}", flush=True)
+
+    # P0-2: 跨维度推断 — 一个回答可能覆盖多个维度
+    extra = get_extra_dimensions()
+    for extra_key, extra_val in extra.items():
+        if extra_key not in filled and extra_val:
+            profile[extra_key] = extra_val
+            filled.add(extra_key)
 
     next_dim = get_next_dimension(filled)
     if next_dim is None:
